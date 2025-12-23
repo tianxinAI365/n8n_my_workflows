@@ -1,0 +1,295 @@
+{
+  "name": "智能微信群聊日报生成器 - 同步到飞书",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        736,
+        736
+      ],
+      "id": "f458f161-99f1-4a33-8804-f2c6c3e3f38c",
+      "name": "触发器-每日定时启动"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c2a2eec2-4ead-4544-83db-73aba917f553",
+              "name": "group_name",
+              "value": "n8n自动化实战课（付费群）",
+              "type": "string"
+            },
+            {
+              "id": "6dab17d2-2e5e-40e3-b5d9-0abcdac0dde8",
+              "name": "date",
+              "value": "={{ $now.minus({days: 1}).format('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "1dd92f96-93e1-4531-bec7-dd4fba67d2cb",
+              "name": "folder_token",
+              "value": "Jp9Dfb5LulaBLld99yscHI4En8b",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        944,
+        736
+      ],
+      "id": "cfa3b966-8c33-44f6-98c1-7b897b560139",
+      "name": "设置-通用配置变量"
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:5030/api/v1/chatlog",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={\n  \"time\": \"{{ $json.date }}~{{ $json.date }}\",\n  \"talker\": \"{{ $json.group_name }}\"\n}",
+        "options": {}
+      },
+      "id": "fca0937e-1a56-4c80-ae94-07bb39123754",
+      "name": "获取-昨日微信群聊记录",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1152,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=群聊名称为：{{ $('设置-通用配置变量').item.json.group_name }}\n\n将{{ $json.data }}按照如下要求执行\n\n## 任务要求\n请详细总结群聊记录，并生成md格式的文档\n\n## 最高优先级\n以下是要求是优先级最高的任务，务必严格执行\n- 遍历群聊所有消息，推荐出今日的 KOL，{聊天内容结构} 务必围绕 KOL 的话题、聊天内容展开\n- KOL 要求：综合考虑群聊人数占比，发言数量、质量、价值点与启发点\n\n## 数据统计规则\n在执行统计时，你必须严格遵守以下规则：\n\n### 1. 定义\"真实消息\"\n一条\"真实消息\"指的是由群成员用户主动发送的任何内容，不包括由系统自动生成的各类通知和提醒。\n\n### 2. 消息识别标准\n一行文本代表一条新消息的开始（应计为1条），当且仅当它同时满足以下两个条件：\n- **条件一**：该行文本中必须包含一个 `HH:MM:SS` 格式的时间戳\n- **条件二**：该行文本**不能**以\"系统消息\"这四个字作为开头\n\n### 3. 必须排除的项\n在计数过程中，你必须忽略以下所有类型的行：\n- 所有明确以\"系统消息\"开头的行（例如：邀请入群、管理员变更等）\n- 不包含用户昵称和时间戳的系统补充说明行（例如：`\"白夜\"与群里其他人都不是朋友关系，请注意隐私安全`）\n- 仅作为消息内容换行的文本行（即那些不符合上述\"消息识别标准\"的行）\n\n### 4. 必须包含的项\n只要一行文本满足\"消息识别标准\"，无论其具体内容是什么，都应被计为一条真实消息。这包括但不限于：\n- 普通文本消息\n- 图片消息（格式通常为 `![图片](...)`）\n- 动画表情（格式通常为 `[动画表情]`）\n- 合并转发的消息（格式通常为 `[合并转发|]`）\n- \"拍了拍\"提醒（格式通常为 `\"用户A\" 拍了拍 \"用户B\"`）\n\n### 5. 统计准确性要求\n- 消息数量务必**真实、准确**，**严格**遵守**数据统计规则**\n- 遍历包括**图片**、**语音**、**文字**等所有消息数量，不要精简\n- 综合**各群聊**消息汇总生成，确保数据完整性\n\n## 自动提取信息\n系统将自动从您提供的聊天记录中提取以下信息：\n- 群名称：将从聊天记录的系统通知或常见群聊信息中提取\n- 日期：将使用聊天记录中最近的日期，或者默认使用今天的日期\n- 时间范围：根据记录中的首条和末条消息时间确定\n\n## 聊天记录支持格式\n支持以下多种常见格式：\n- \"[时间] 昵称：消息内容\"\n- \"时间 - 昵称：消息内容\"\n- \"昵称 时间：消息内容\"\n- 其他合理的时间和昵称分隔格式\n\n## 聊天内容结构\n\n### 群聊总结\n- 群聊内容\n- 消息数量：遍历包括**图片**、**语音**、**文字**等所有消息数量，不要精简\n- 活跃人员数量\n- 热点话题数量\n- 统计时间\n\n### 活跃用户分布\n- 综合**各群聊**消息汇总生成，消息数量务必**真实、准确**，**严格**遵守**数据统计规则**\n- 按发言数量降序排列\n- 包含每个用户的发言数量和占比\n\n### 消息时间分布\n- 综合**各群聊**消息汇总生成，消息数量务必**真实、准确**，**严格**遵守**数据统计规则**\n- 按时间段统计消息分布情况\n- 识别聊天高峰时段\n\n### 今日热点\n罗列群聊中**所有热点**消息，不要遗漏，热点按照如下结构展示：\n\n#### 排序规则\n- 优先按照\"**关键词提及次数**\"降序排序热点\n- 如关键词提及次数相同，则按参与该话题的消息数量排序\n\n#### 每个热点包含\n- 关键词：[3-5个核心关键词]\n- 消息数量：X条\n- 关键词提及次数：[具体统计数据]\n- 核心内容务必**引用人员原话**\n\n#### 引用标准（按优先级排序）\n1. 有正向评论或赞扬的高价值内容\n2. 提供解决方案或实用建议的内容\n3. 引发深度讨论的启发性观点\n4. 分享有价值资源或经验的内容\n5. 高质量，有启发性，有道理，有价值，有反响，有深度，有思考，惊艳且让人印象深刻\n\n#### 数量要求\n- 不少于 6 个主题，每个主题不少于 150 字\n\n### 精彩引用\n- 不少于 20 条\n- 务必**引用人员原话**\n- 优先选择符合引用标准的高质量内容\n- 格式：@用户名(用户ID) 时间: 原话内容\n\n### 重要链接与资源\n罗列群聊中**所有**真实的、原始的链接：\n\n#### 格式要求\n- 支持点击文字内容后跳转原始链接\n- 格式：**标题：链接**，不要使用 md 格式\n- 例如：小云雀AI内容创作工具：https://finder.video.qq.com/251/20302/stodownload\n\n#### 排除内容\n【重要链接与资源】排除由@朱行政发布的以下内容：\n- \"向阳乔木AI交流群日报\"\n- \"向阳乔木AI交流群入群方式\"\n- \"历史报告查阅链接\"\n- \"参考教程及提示词\"等内容\n\n#### 数量要求\n- 力争不少于 6 条链接（如实际链接不足，请如实说明）\n\n### 活跃之星\n- 发言次数：准确统计每个用户的发言数量\n- 人员按发言次数**倒序**排序，次数少于 3 次的不统计\n- 发言内容汇总：50-100字概述每个用户的主要贡献和讨论内容\n- 不少于 9 人（如不足9人达到统计标准，则列出所有符合条件的用户）\n\n### 词云\n- 提取聊天中的高频词汇，包括技术术语、工具名称、讨论话题等\n- 不少于 30 个\n\n## 注意事项\n- 人员前+@\n- 人员显示真实名称，而不用@我之类的指代\n- 保持链接的完整性和可点击性\n- 确保所有引用内容的准确性\n\n## 容错处理\n- 如果某个版块内容不足最小要求数量，说明实际情况并尽力提供\n- 例如：链接不足6条时，提供实际找到的所有链接并说明\"本次聊天共发现X条链接\"\n- 活跃用户不足9人时，说明\"本次聊天共有X人发言超过3次\"\n\n## 质量检查清单\n生成前请确认：\n- ✅ 消息统计数量是否严格按照数据统计规则执行\n- ✅ 是否识别出明确的KOL并围绕其贡献展开分析\n- ✅ 热点话题是否都有充分的原话引用且按提及次数排序\n- ✅ 链接是否保持完整可点击且排除了指定内容\n- ✅ 用户统计数量是否准确无误\n- ✅ 时间范围是否正确提取\n\n## 示例参考\n\n### 消息统计示例\n**输入：**\n```\n安德鲁(AndrewZhang) 08:20:28\n[强]\n系统消息 11:05:42\n\"向阳乔木(vista8)\"邀请\"白夜(wxid_71610kt6blek22)\"加入了群聊\n 11:05:42\n\"白夜\"与群里其他人都不是朋友关系，请注意隐私安全\nJK(wxid_6t5xmexpyiwb22) 12:06:11\n乔木老师开新群了？十分钟没席位了吗\n```\n\n**分析过程：**\n- `安德鲁(AndrewZhang) 08:20:28`：满足条件，计 **1** 条\n- `[强]`：不满足条件（没有时间戳），是上一条消息的内容，不计数\n- `系统消息 11:05:42`：不满足条件（以\"系统消息\"开头），不计数\n- ` 11:05:42` 和 `\"白夜\"与群里...`：不满足条件，是系统补充说明，不计数\n- `JK(wxid_6t5xmexpyiwb22) 12:06:11`：满足条件，计 **1** 条\n\n**期望输出：** 2条消息\n\n## 输出格式要求\n- **所有生成的内容必须包含在 ```markdown 代码块中**\n- **不要在代码块外添加任何其他文本**\n- **确保markdown格式正确且可读性良好**",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1376,
+        736
+      ],
+      "id": "4799a853-f9a2-4a1c-a0bd-be6b8daef3c8",
+      "name": "AI-分析并总结群聊内容"
+    },
+    {
+      "parameters": {
+        "resource": "document",
+        "operation": "create",
+        "title": "={{ $('设置-通用配置变量').item.json.group_name }}{{ $('设置-通用配置变量').item.json.date }}",
+        "folder_token": {
+          "__rl": true,
+          "value": "={{ $('设置-通用配置变量').item.json.folder_token }}",
+          "mode": "id"
+        }
+      },
+      "type": "n8n-nodes-feishu-lark.lark",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        736
+      ],
+      "id": "97b8bef3-dc20-4288-8e7a-0cea8f39b4ac",
+      "name": "飞书-创建空白文档",
+      "credentials": {
+        "larkApi": {
+          "id": "mNxgjRjxJOgORgfZ",
+          "name": "Test Lark Tenant Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "document",
+        "operation": "convertBlock",
+        "content": "={{ $('AI-分析并总结群聊内容').item.json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-feishu-lark.lark",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        736
+      ],
+      "id": "bcb6ec00-41b5-47e1-8d89-ce3ec144d8b1",
+      "name": "飞书-转换Markdown为Block",
+      "credentials": {
+        "larkApi": {
+          "id": "mNxgjRjxJOgORgfZ",
+          "name": "Test Lark Tenant Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "document",
+        "operation": "createBlock",
+        "document_id": {
+          "__rl": true,
+          "value": "={{ $('飞书-创建空白文档').item.json.document_id }}",
+          "mode": "id"
+        },
+        "block_id": "={{ $('飞书-创建空白文档').item.json.document_id }}",
+        "body": "={\n  \"index\": -1,\n  \"children\": {{ JSON.stringify($json.blocks) }}\n} ",
+        "options": {
+          "user_id_type": "open_id"
+        }
+      },
+      "type": "n8n-nodes-feishu-lark.lark",
+      "typeVersion": 1,
+      "position": [
+        2112,
+        736
+      ],
+      "id": "cc9deed3-5360-4446-a0eb-117945f3131f",
+      "name": "飞书-写入日报内容",
+      "credentials": {
+        "larkApi": {
+          "id": "mNxgjRjxJOgORgfZ",
+          "name": "Test Lark Tenant Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# 🤖 智能微信群聊日报生成器 - 同步到飞书\n\n📋 **基本信息**\n- **工作流名称**：智能微信群聊日报生成器 - 同步到飞书\n- **版本**：v1.0.0\n- **架构模式**：定时任务 + API 调用 + LLM 处理 + 文档生成\n- **技术栈**：n8n + Chatlog + DeepSeek + 飞书 (Lark)\n- **创建者**：林月半子\n- **微信**：cloud-native-101\n\n\n🎯 **功能概述**\n\n本工作流实现了一个全自动的微信群聊日报生成系统。每日定时启动，自动抓取指定微信群聊前一天的聊天记录，利用大语言模型（DeepSeek）进行深度分析和智能总结，最终将结构化的日报内容生成并同步到指定的飞书云文档中，实现群聊信息的高效沉淀与回顾。\n\n\n⚡ **核心特性**\n- **全自动化**：无需人工干预，每日定时执行，自动完成数据获取、分析、报告生成全流程。\n- **动态日期**：自动计算并获取“昨天”的日期，无需手动修改时间参数。\n- **智能分析**：集成 DeepSeek 大语言模型，通过精心设计的 Prompt 对海量聊天记录进行智能提炼和结构化总结。\n- **无缝集成**：与 Chatlog 服务和飞书开放平台 API 深度集成，打通数据输入和输出通道。\n- **配置灵活**：通过独立的“设置”节点统一管理群聊名称、飞书文件夹等变量，方便维护和修改。\n\n\n🛠️ **核心功能**\n1. **定时触发**：每日固定时间自动启动工作流。\n2. **数据抓取**：通过 HTTP 请求调用本地 Chatlog 服务，获取指定群聊和日期的聊天记录。\n3. **内容生成**：调用 LLM 根据预设的复杂 Prompt（包含统计规则、内容结构、格式要求等），生成 Markdown 格式的详细日报。\n4. **文档同步**：自动在飞书指定文件夹下创建日报文档，并将 AI 生成的内容转换为飞书格式后写入。\n\n\n🔄 **系统架构**\n1. **调度层**：`Schedule Trigger` 节点负责按时启动整个流程。\n2. **配置层**：`Set` 节点负责初始化所有需要的动态参数（如群名、日期）。\n3. **数据层**：`HTTP Request` 节点负责从 Chatlog API 获取原始数据。\n4. **智能层**：`LLM Chain` 结合 `DeepSeek Model` 负责核心的数据分析和内容生成。\n5. **输出层**：`Lark` 节点组负责与飞书 API 交互，完成文档的创建和内容填充。\n\n\n📊 **数据流转**\n定时信号 → 生成配置参数 → 请求 Chatlog API → 获取群聊文本数据 → 发送给 DeepSeek 模型 → 返回 Markdown 日报 → 创建飞书文档 → 转换内容格式 → 写入飞书文档\n\n\n🌐 **依赖服务**\n- **Chatlog 服务**：需要本地部署并成功运行 Chatlog，以提供聊天记录 API。\n- **DeepSeek API**：需要配置有效的 DeepSeek API Key。\n- **飞书 API**：需要配置具有文档读写权限的飞书应用凭证。\n\n\n⚠️ **部署要求**\n- **网络访问**：确保 n8n 实例可以通过 `host.docker.internal` 访问到宿主机的 Chatlog 服务。\n- **凭证配置**：在 n8n 中正确配置 DeepSeek 和飞书（Lark）的 API 凭证。\n- **参数设置**：在“设置-通用配置变量”节点中，正确填写 `group_name` 和飞书 `folder_token`。\n\n\n💡 **使用场景**\n- **社群管理**：帮助社群运营者快速了解昨日社群讨论焦点和活跃成员，高效管理社群。\n- **团队协作**：自动汇总技术群、项目群的讨论要点，方便团队成员快速同步信息，避免信息遗漏。\n- **知识沉淀**：将高质量的群聊内容自动整理成文档，方便后续查阅和知识库建设。\n- **个人助理**：帮助个人用户从海量群聊信息中解放出来，只关注最重要的内容精华。\n\n\n🔧 **技术亮点**\n- **表达式驱动**：大量使用 n8n 表达式（如动态日期生成、节点间数据引用），实现高度自动化和灵活性。\n- **结构化 Prompt**：通过一个非常详细和结构化的 Prompt 来约束和引导 LLM，确保输出内容的稳定性和高质量。\n- **服务解耦**：将数据源（Chatlog）、处理核心（LLM）、输出端（飞书）清晰分离，易于扩展或替换其中任一环节。",
+        "height": 1408,
+        "width": 2784,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        224
+      ],
+      "id": "4af37e23-2024-4ceb-ade3-c2eba0447575",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        944
+      ],
+      "id": "d7b40d05-9430-4f07-89ea-7b617b7e45b8",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "uDJ6QiIFt3fDeWPR",
+          "name": "DeepSeek account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "触发器-每日定时启动": {
+      "main": [
+        [
+          {
+            "node": "设置-通用配置变量",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "设置-通用配置变量": {
+      "main": [
+        [
+          {
+            "node": "获取-昨日微信群聊记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取-昨日微信群聊记录": {
+      "main": [
+        [
+          {
+            "node": "AI-分析并总结群聊内容",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI-分析并总结群聊内容": {
+      "main": [
+        [
+          {
+            "node": "飞书-创建空白文档",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "飞书-创建空白文档": {
+      "main": [
+        [
+          {
+            "node": "飞书-转换Markdown为Block",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "飞书-转换Markdown为Block": {
+      "main": [
+        [
+          {
+            "node": "飞书-写入日报内容",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI-分析并总结群聊内容",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "77af135f-11fe-4490-8725-bd92c9e649f7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a152539bc323133bde80781a1dc51fefe2ad2e9f6579ca96b98f3bb66ae5bb00"
+  },
+  "id": "ITYStuvN08R22p9k",
+  "tags": []
+}

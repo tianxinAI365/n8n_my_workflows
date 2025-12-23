@@ -1,0 +1,189 @@
+{
+  "name": "N8N+Nano聊天生图工作流",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        128
+      ],
+      "id": "6b7454d4-8961-49d8-a1bf-970ada448e97",
+      "name": "When chat message received",
+      "webhookId": "e1788c40-6723-48ec-bdff-53c12b6f8d7f"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openRouterApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"google/gemini-2.5-flash-image-preview\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"text\",\n          \"text\": {{ JSON.stringify($json.chatInput) }}\n        }\n      ]\n    }\n  ]\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        544,
+        128
+      ],
+      "id": "183cd0a4-f30c-4f4f-bd8f-ae00e2655b0d",
+      "name": "HTTP Request",
+      "credentials": {
+        "openRouterApi": {
+          "id": "PniCfeNtv6tmsVxZ",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "base",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        928,
+        128
+      ],
+      "id": "d4cb4592-31a6-45e3-a7e8-740fe456af5a",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1105fbcd-2732-427a-af96-8102d1d4ef91",
+              "name": "base",
+              "value": "={{ $json.choices[0].message.images[0].image_url.url.split(\",\")[1] }}",
+              "type": "string"
+            },
+            {
+              "id": "0a8c6ab4-a596-4eb5-a681-4a0a52c46863",
+              "name": "mime",
+              "value": "={{ $json.choices[0].message.images[0].image_url.url.match(/^data:([^;]+)/)[1] }}",
+              "type": "string"
+            },
+            {
+              "id": "39873dde-90e0-4868-91f3-cdc1762ec64f",
+              "name": "data",
+              "value": "={{ $json.choices[0].message.images[0].image_url.url}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        752,
+        128
+      ],
+      "id": "e5099024-f269-47e4-b52b-bbe2df2517a3",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "content": "#### 配置 OpenRouter 凭证 👇",
+        "height": 80,
+        "width": 214,
+        "color": 3
+      },
+      "id": "f73ceb5f-6776-4b29-a19a-f5b100f213e9",
+      "name": "Sticky Note12",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        480,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 🎨 N8N+Nano聊天生图工作流\n\n\n📋 **基本信息**\n• 工作流名称: Nano-Chat-Image-Generator  \n• 版本: v1.0.0\n• 技术栈: N8N + OpenRouter + Nano Banana\n• **创建者**：林月半子\n• **微信**：cloud-native-101\n\n🎯 **功能概述**\n基于 OpenRouter Nano 模型的聊天生图自动化工具，用户在聊天界面输入提示词，系统自动调用 API 生成高质量图片并返回文件格式。\n\n⚙️ **配置说明**\n1. 配置 OpenRouter 凭证\n   ○ 注册 OpenRouter 账号获取 API Key\n   ○ 在凭证管理中添加 OpenRouter 凭证\n\n2. 节点配置要点\n   ○ Chat Trigger: 启用聊天模式\n   ○ HTTP Request: POST请求调用生图API\n   ○ Edit Fields: 提取 base64 图片数据和MIME类型\n   ○ Convert to File: 将 base64 转换为可下载文件\n\n\n💡 **使用提示**\n• 支持中英文提示词\n• 生成图片为PNG格式\n• 平均响应时间10-30秒\n• 建议提示词详细具体以获得更好效果: [官方案例](https://ai.google.dev/gemini-api/docs/image-generation?utm_source=AISgaias&utm_medium=email&utm_campaign=nano&utm_content=hero_start_building&hl=zh-cn#prompt)\n\n\n",
+        "height": 640,
+        "width": 1280,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        -272
+      ],
+      "id": "f2651dc1-ffb0-40dd-a659-a9dac1ed7a27",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bb278730-b66e-4554-969c-ef229e8ed45e",
+  "meta": {
+    "instanceId": "a152539bc323133bde80781a1dc51fefe2ad2e9f6579ca96b98f3bb66ae5bb00"
+  },
+  "id": "EvLZCRic7qjJNR0A",
+  "tags": [
+    {
+      "createdAt": "2025-07-24T01:13:19.506Z",
+      "updatedAt": "2025-07-24T01:13:33.568Z",
+      "id": "MYnVFZwT2gKoYf9C",
+      "name": "auto-flow-academy"
+    }
+  ]
+}

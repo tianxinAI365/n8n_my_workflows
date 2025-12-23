@@ -1,0 +1,313 @@
+{
+  "name": "智能生活助理前后端一体化 v1.0.0",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        656,
+        304
+      ],
+      "id": "0452394c-f490-45fa-91b6-c47acf9e8880",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "uDJ6QiIFt3fDeWPR",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "=https://mcp.amap.com/mcp?key={{ $env.AMAP_API_KEY}}",
+        "serverTransport": "httpStreamable",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.1,
+      "position": [
+        992,
+        320
+      ],
+      "id": "ed2ba8c7-ecd6-4155-bbad-2872be8accad",
+      "name": "HTTP Streamable"
+    },
+    {
+      "parameters": {
+        "content": "## 高德地图",
+        "height": 220,
+        "width": 252,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        912,
+        224
+      ],
+      "id": "30f18c16-ec5d-4c8f-8515-39b9f32d2da4",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "#### 配置高德地图 API Key 👇",
+        "height": 80,
+        "width": 214,
+        "color": 3
+      },
+      "id": "6953ca72-2c1e-48aa-87c6-b32c7cc1a1b4",
+      "name": "Sticky Note14",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        928,
+        288
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "smart-assistant",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        352,
+        112
+      ],
+      "id": "32cf2db5-d638-4340-b731-e6389bce3b95",
+      "name": "触发器：接收生成指令",
+      "webhookId": "0e5b7c7b-8f3e-4b4e-9d8a-77c8e5e6e6a1"
+    },
+    {
+      "parameters": {
+        "path": "smart-life-assistant",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -128
+      ],
+      "id": "3914e971-dc8d-4396-90d6-b3e264e9a11b",
+      "name": "触发器：提供UI界面",
+      "webhookId": "f7a3f5b1-f3b1-4f2c-8c33-c289912a7a5f"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n<meta charset=\"UTF-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n<title>智能生活助理</title>\n<style>\n  :root{\n    --primary: #6366f1;\n    --primary-dark: #4f46e5;\n    --secondary: #f59e0b;\n    --bg: #0f172a;\n    --panel: #1e293b;\n    --panel-light: #334155;\n    --text: #f8fafc;\n    --text-muted: #94a3b8;\n    --text-accent: #e2e8f0;\n    --border: #334155;\n    --border-light: #475569;\n    --success: #10b981;\n    --warning: #f59e0b;\n    --error: #ef4444;\n    --font: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n  }\n  \n  * { box-sizing: border-box; }\n  html, body { margin: 0; padding: 0; }\n  \n  body {\n    font-family: var(--font);\n    background: var(--bg);\n    color: var(--text);\n    min-height: 100vh;\n    overflow-x: hidden;\n  }\n  \n  /* 背景动效 */\n  body::before {\n    content: '';\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n    background: \n      radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),\n      radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),\n      radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);\n    z-index: -1;\n    animation: bgShift 20s ease-in-out infinite;\n  }\n  \n  @keyframes bgShift {\n    0%, 100% { opacity: 1; }\n    50% { opacity: 0.8; }\n  }\n  \n  @keyframes fadeInScale {\n    0% { \n      opacity: 0; \n      transform: scale(0.8); \n    }\n    100% { \n      opacity: 1; \n      transform: scale(1); \n    }\n  }\n  \n  .container {\n    max-width: 1000px;\n    margin: 0 auto;\n    padding: 40px 20px;\n    display: grid;\n    grid-template-columns: 1fr 1fr;\n    gap: 40px;\n    min-height: 100vh;\n    align-items: start;\n  }\n  \n  @media (max-width: 1024px) {\n    .container {\n      grid-template-columns: 1fr;\n      gap: 30px;\n      max-width: 600px;\n    }\n  }\n  \n  /* 左侧查询区域 */\n  .query-panel {\n    background: var(--panel);\n    border: 1px solid var(--border);\n    border-radius: 24px;\n    padding: 32px;\n    backdrop-filter: blur(20px);\n    box-shadow: \n      0 20px 40px rgba(0, 0, 0, 0.4),\n      inset 0 1px 0 rgba(255, 255, 255, 0.1);\n  }\n  \n  .header {\n    text-align: center;\n    margin-bottom: 36px;\n  }\n  \n  .title {\n    font-size: 32px;\n    font-weight: 700;\n    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n    -webkit-background-clip: text;\n    -webkit-text-fill-color: transparent;\n    margin: 0 0 12px;\n    letter-spacing: -0.02em;\n  }\n  \n  .subtitle {\n    font-size: 16px;\n    color: var(--text-muted);\n    margin: 0;\n    line-height: 1.6;\n  }\n  \n  /* 查询表单 */\n  .form-group {\n    margin-bottom: 24px;\n  }\n  \n  label {\n    display: block;\n    font-weight: 600;\n    margin-bottom: 12px;\n    color: var(--text-accent);\n    font-size: 16px;\n  }\n  \n  .query-input {\n    width: 100%;\n    padding: 20px 24px;\n    background: var(--panel-light);\n    border: 2px solid var(--border-light);\n    border-radius: 16px;\n    color: var(--text);\n    font-size: 16px;\n    line-height: 1.6;\n    min-height: 120px;\n    resize: vertical;\n    transition: all 0.3s ease;\n    font-family: inherit;\n  }\n  \n  .query-input:focus {\n    outline: none;\n    border-color: var(--primary);\n    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);\n    background: rgba(99, 102, 241, 0.05);\n  }\n  \n  .query-input::placeholder {\n    color: var(--text-muted);\n    line-height: 1.6;\n  }\n  \n  /* 快捷示例 */\n  .examples {\n    margin-bottom: 24px;\n  }\n  \n  .examples-title {\n    font-size: 14px;\n    color: var(--text-muted);\n    margin-bottom: 12px;\n    font-weight: 500;\n  }\n  \n  .example-tags {\n    display: flex;\n    flex-wrap: wrap;\n    gap: 8px;\n  }\n  \n  .example-tag {\n    padding: 8px 16px;\n    background: var(--panel-light);\n    border: 1px solid var(--border-light);\n    border-radius: 20px;\n    color: var(--text-muted);\n    font-size: 13px;\n    cursor: pointer;\n    transition: all 0.3s ease;\n    user-select: none;\n  }\n  \n  .example-tag:hover {\n    border-color: var(--primary);\n    color: var(--primary);\n    background: rgba(99, 102, 241, 0.1);\n    transform: translateY(-1px);\n  }\n  \n  /* 查询按钮 */\n  .query-btn {\n    width: 100%;\n    padding: 18px 24px;\n    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);\n    border: none;\n    border-radius: 16px;\n    color: white;\n    font-weight: 700;\n    font-size: 16px;\n    cursor: pointer;\n    transition: all 0.3s ease;\n    position: relative;\n    overflow: hidden;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n  }\n  \n  .query-btn::before {\n    content: '';\n    position: absolute;\n    top: 0;\n    left: -100%;\n    width: 100%;\n    height: 100%;\n    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);\n    transition: left 0.6s ease;\n  }\n  \n  .query-btn:hover::before {\n    left: 100%;\n  }\n  \n  .query-btn:hover {\n    transform: translateY(-2px);\n    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.4);\n  }\n  \n  .query-btn:active {\n    transform: translateY(0);\n  }\n  \n  .query-btn:disabled {\n    opacity: 0.6;\n    cursor: not-allowed;\n    transform: none;\n  }\n  \n  .loading-spinner {\n    width: 20px;\n    height: 20px;\n    border: 2px solid rgba(255, 255, 255, 0.3);\n    border-top: 2px solid white;\n    border-radius: 50%;\n    animation: spin 1s linear infinite;\n  }\n  \n  @keyframes spin {\n    0% { transform: rotate(0deg); }\n    100% { transform: rotate(360deg); }\n  }\n  \n  /* 右侧结果区域 */\n  .result-panel {\n    background: var(--panel);\n    border: 1px solid var(--border);\n    border-radius: 24px;\n    padding: 32px;\n    backdrop-filter: blur(20px);\n    min-height: 500px;\n    display: flex;\n    flex-direction: column;\n  }\n  \n  .result-header {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    margin-bottom: 24px;\n  }\n  \n  .result-title {\n    font-size: 20px;\n    font-weight: 600;\n    color: var(--text-accent);\n    margin: 0;\n  }\n  \n  .clear-btn {\n    padding: 8px 16px;\n    background: var(--panel-light);\n    border: 1px solid var(--border-light);\n    border-radius: 8px;\n    color: var(--text-muted);\n    font-size: 12px;\n    cursor: pointer;\n    transition: all 0.3s ease;\n  }\n  \n  .clear-btn:hover {\n    background: var(--border-light);\n    color: var(--text);\n  }\n  \n  .result-content {\n    flex: 1;\n    position: relative;\n    overflow-y: auto;\n    padding: 8px 0;\n  }\n  \n  .result-content.center-content {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    flex-direction: column;\n  }\n  \n  .result-content.has-result {\n    display: block;\n  }\n  \n  .result-placeholder {\n    text-align: center;\n    color: var(--text-muted);\n    max-width: 300px;\n    margin: auto;\n    padding: 40px 20px;\n  }\n  \n  .placeholder-icon {\n    font-size: 48px;\n    margin-bottom: 16px;\n    opacity: 0.5;\n  }\n  \n  .placeholder-text {\n    font-size: 15px;\n    line-height: 1.6;\n  }\n  \n  /* 加载状态 */\n  .loading-state {\n    text-align: center;\n    padding: 40px 20px;\n  }\n  \n  .loading-icon {\n    width: 60px;\n    height: 60px;\n    border: 4px solid var(--panel-light);\n    border-top: 4px solid var(--primary);\n    border-radius: 50%;\n    animation: spin 1s linear infinite;\n    margin: 0 auto 20px;\n  }\n  \n  .loading-text {\n    color: var(--text-muted);\n    font-size: 16px;\n    margin-bottom: 8px;\n  }\n  \n  .loading-subtext {\n    color: var(--text-muted);\n    font-size: 13px;\n    opacity: 0.8;\n  }\n  \n  /* 结果展示 */\n  .result-display {\n    background: var(--panel-light);\n    border: 1px solid var(--border-light);\n    border-radius: 16px;\n    padding: 24px;\n    animation: fadeInScale 0.5s ease-out;\n  }\n  \n  .result-item {\n    margin-bottom: 20px;\n    padding-bottom: 20px;\n    border-bottom: 1px solid var(--border-light);\n  }\n  \n  .result-item:last-child {\n    margin-bottom: 0;\n    padding-bottom: 0;\n    border-bottom: none;\n  }\n  \n  .result-item-title {\n    font-weight: 600;\n    color: var(--text-accent);\n    margin-bottom: 8px;\n    display: flex;\n    align-items: center;\n    gap: 8px;\n  }\n  \n  .result-item-content {\n    color: var(--text);\n    line-height: 1.6;\n    font-size: 15px;\n  }\n  \n  /* HTML内容特殊样式 */\n  .html-content {\n    font-size: 14px;\n  }\n  \n  .html-content h2 {\n    color: var(--primary);\n    font-size: 18px;\n    font-weight: 700;\n    margin: 20px 0 12px 0;\n    border-bottom: 2px solid var(--border-light);\n    padding-bottom: 8px;\n  }\n  \n  .html-content h3 {\n    color: var(--text-accent);\n    font-size: 16px;\n    font-weight: 600;\n    margin: 16px 0 8px 0;\n  }\n  \n  .html-content h4 {\n    color: var(--text-accent);\n    font-size: 15px;\n    font-weight: 600;\n    margin: 12px 0 6px 0;\n  }\n  \n  .html-content p {\n    margin: 8px 0;\n    line-height: 1.7;\n  }\n  \n  .html-content strong {\n    color: var(--text-accent);\n    font-weight: 600;\n  }\n  \n  .html-content br + br {\n    display: block;\n    margin: 8px 0;\n    content: \"\";\n  }\n  \n  .status-badge {\n    padding: 4px 12px;\n    border-radius: 12px;\n    font-size: 12px;\n    font-weight: 600;\n    text-transform: uppercase;\n    letter-spacing: 0.5px;\n  }\n  \n  .status-success {\n    background: rgba(16, 185, 129, 0.2);\n    color: var(--success);\n    border: 1px solid rgba(16, 185, 129, 0.3);\n  }\n  \n  .status-warning {\n    background: rgba(245, 158, 11, 0.2);\n    color: var(--warning);\n    border: 1px solid rgba(245, 158, 11, 0.3);\n  }\n  \n  .status-error {\n    background: rgba(239, 68, 68, 0.2);\n    color: var(--error);\n    border: 1px solid rgba(239, 68, 68, 0.3);\n  }\n  \n  /* 隐藏类 */\n  .hidden { display: none !important; }\n  \n  /* 错误状态 */\n  .error-state {\n    text-align: center;\n    padding: 40px 20px;\n    color: var(--error);\n  }\n  \n  .error-icon {\n    font-size: 48px;\n    margin-bottom: 16px;\n    opacity: 0.8;\n  }\n  \n  .error-title {\n    font-size: 18px;\n    font-weight: 600;\n    margin-bottom: 8px;\n  }\n  \n  .error-message {\n    font-size: 14px;\n    color: var(--text-muted);\n    line-height: 1.5;\n  }\n\n  /* 响应式优化 */\n  @media (max-width: 768px) {\n    .container {\n      padding: 20px 16px;\n    }\n    \n    .query-panel,\n    .result-panel {\n      padding: 24px;\n    }\n    \n    .title {\n      font-size: 28px;\n    }\n    \n    .example-tags {\n      gap: 6px;\n    }\n    \n    .example-tag {\n      font-size: 12px;\n      padding: 6px 12px;\n    }\n  }\n</style>\n</head>\n<body>\n  <div class=\"container\">\n    <!-- 左侧查询面板 -->\n    <div class=\"query-panel\">\n      <div class=\"header\">\n        <h1 class=\"title\">🤖 智能生活助理</h1>\n        <p class=\"subtitle\">天气查询 · 地点推荐 · 生活服务</p>\n      </div>\n      \n      <form id=\"queryForm\">\n        <div class=\"form-group\">\n          <label for=\"queryInput\">请输入您的问题：</label>\n          <textarea \n            id=\"queryInput\" \n            class=\"query-input\" \n            placeholder=\"例如：\n• 上海人民广场附近有什么好的咖啡厅吗？\n• 明天去上海出差帮我查下天气\n• 我想去三里屯，查下天气，顺便推荐个餐厅\n\n支持天气查询、地点推荐、餐厅咖啡厅等生活服务查询...\"\n            required\n          ></textarea>\n        </div>\n        \n        <div class=\"examples\">\n          <div class=\"examples-title\">💡 快捷示例（点击填入）：</div>\n          <div class=\"example-tags\">\n            <span class=\"example-tag\" data-query=\"上海人民广场附近有什么好的咖啡厅吗？\">☕ 咖啡厅推荐</span>\n            <span class=\"example-tag\" data-query=\"明天去上海出差帮我查下天气\">🌤️ 天气查询</span>\n            <span class=\"example-tag\" data-query=\"我想去三里屯，查下天气，顺便推荐个餐厅\">🍽️ 综合查询</span>\n            <span class=\"example-tag\" data-query=\"北京国贸附近有什么好吃的川菜馆？\">🌶️ 美食推荐</span>\n            <span class=\"example-tag\" data-query=\"深圳明天天气怎么样，适合户外运动吗？\">🏃 运动建议</span>\n          </div>\n        </div>\n        \n        <button type=\"submit\" class=\"query-btn\" id=\"submitBtn\">\n          <span id=\"btnText\">🔍 开始查询</span>\n          <div id=\"loadingSpinner\" class=\"loading-spinner hidden\"></div>\n        </button>\n      </form>\n    </div>\n    \n    <!-- 右侧结果面板 -->\n    <div class=\"result-panel\">\n      <div class=\"result-header\">\n        <h2 class=\"result-title\">查询结果</h2>\n        <button class=\"clear-btn\" id=\"clearBtn\">清空结果</button>\n      </div>\n      \n      <div class=\"result-content\" id=\"resultContent\">\n        <!-- 默认占位符 -->\n        <div class=\"result-placeholder\" id=\"placeholder\">\n          <div class=\"placeholder-icon\">💬</div>\n          <div class=\"placeholder-text\">\n            在左侧输入您的问题<br>\n            我将为您提供智能化的生活服务建议\n          </div>\n        </div>\n        \n        <!-- 加载状态 -->\n        <div class=\"loading-state hidden\" id=\"loadingState\">\n          <div class=\"loading-icon\"></div>\n          <div class=\"loading-text\">正在处理您的请求...</div>\n          <div class=\"loading-subtext\">AI正在分析并获取最新信息</div>\n        </div>\n        \n        <!-- 错误状态 -->\n        <div class=\"error-state hidden\" id=\"errorState\">\n          <div class=\"error-icon\">⚠️</div>\n          <div class=\"error-title\">请求失败</div>\n          <div class=\"error-message\" id=\"errorMessage\">网络连接异常，请稍后重试</div>\n        </div>\n        \n        <!-- 结果展示区域 -->\n        <div class=\"result-display hidden\" id=\"resultDisplay\">\n          <div id=\"resultItems\"></div>\n        </div>\n      </div>\n    </div>\n  </div>\n\n<script>\n// 配置\nconst WEBHOOK_URL = '/webhook/smart-assistant'; // 根据你的实际webhook地址修改\n\n// DOM 元素\nconst queryForm = document.getElementById('queryForm');\nconst queryInput = document.getElementById('queryInput');\nconst submitBtn = document.getElementById('submitBtn');\nconst btnText = document.getElementById('btnText');\nconst loadingSpinner = document.getElementById('loadingSpinner');\nconst clearBtn = document.getElementById('clearBtn');\n\nconst resultContent = document.getElementById('resultContent');\nconst placeholder = document.getElementById('placeholder');\nconst loadingState = document.getElementById('loadingState');\nconst errorState = document.getElementById('errorState');\nconst errorMessage = document.getElementById('errorMessage');\nconst resultDisplay = document.getElementById('resultDisplay');\nconst resultItems = document.getElementById('resultItems');\n\n// 快捷示例标签点击事件\ndocument.querySelectorAll('.example-tag').forEach(tag => {\n  tag.addEventListener('click', () => {\n    const query = tag.dataset.query;\n    queryInput.value = query;\n    queryInput.focus();\n  });\n});\n\n// 清空结果\nclearBtn.addEventListener('click', () => {\n  showPlaceholder();\n});\n\n// 表单提交\nqueryForm.addEventListener('submit', async (e) => {\n  e.preventDefault();\n  \n  const query = queryInput.value.trim();\n  if (!query) {\n    alert('请输入您的问题');\n    return;\n  }\n  \n  await handleQuery(query);\n});\n\n// 处理查询\nasync function handleQuery(query) {\n  try {\n    // 显示加载状态\n    showLoading();\n    \n    // 发送请求\n    const response = await fetch(WEBHOOK_URL, {\n      method: 'POST',\n      headers: {\n        'Content-Type': 'application/json',\n      },\n      body: JSON.stringify({\n        query: query,\n        timestamp: new Date().toISOString()\n      })\n    });\n    \n    if (!response.ok) {\n      throw new Error(`HTTP ${response.status}: ${response.statusText}`);\n    }\n    \n    const data = await response.json();\n    \n    // 显示结果\n    showResult(data);\n    \n  } catch (error) {\n    console.error('查询失败:', error);\n    showError(error.message);\n  }\n}\n\n// 显示占位符\nfunction showPlaceholder() {\n  hideAll();\n  placeholder.classList.remove('hidden');\n  resultContent.classList.add('center-content');\n  resultContent.classList.remove('has-result');\n  resetButton();\n}\n\n// 显示加载状态\nfunction showLoading() {\n  hideAll();\n  loadingState.classList.remove('hidden');\n  resultContent.classList.add('center-content');\n  resultContent.classList.remove('has-result');\n  \n  // 更新按钮状态\n  submitBtn.disabled = true;\n  btnText.textContent = '查询中...';\n  loadingSpinner.classList.remove('hidden');\n}\n\n// 显示错误\nfunction showError(message) {\n  hideAll();\n  errorState.classList.remove('hidden');\n  resultContent.classList.add('center-content');\n  resultContent.classList.remove('has-result');\n  errorMessage.textContent = message || '请求失败，请稍后重试';\n  resetButton();\n}\n\n// 显示结果\nfunction showResult(data) {\n  hideAll();\n  resultDisplay.classList.remove('hidden');\n  resultContent.classList.remove('center-content');\n  resultContent.classList.add('has-result');\n  resetButton();\n  \n  // 渲染结果内容\n  renderResult(data);\n  \n  // 重新调整高度以确保滚动正常工作\n  setTimeout(() => {\n    syncPanelHeights();\n  }, 100);\n}\n\n// 隐藏所有状态\nfunction hideAll() {\n  placeholder.classList.add('hidden');\n  loadingState.classList.add('hidden');\n  errorState.classList.add('hidden');\n  resultDisplay.classList.add('hidden');\n}\n\n// 重置按钮状态\nfunction resetButton() {\n  submitBtn.disabled = false;\n  btnText.textContent = '🔍 开始查询';\n  loadingSpinner.classList.add('hidden');\n}\n\n// 渲染结果内容\nfunction renderResult(data) {\n  resultItems.innerHTML = '';\n  \n  // 如果返回的是字符串，直接显示\n  if (typeof data === 'string') {\n    const item = createResultItem('🤖 AI助理回复', data, 'success');\n    resultItems.appendChild(item);\n    return;\n  }\n  \n  // 如果返回的是对象，尝试解析结构\n  if (data && typeof data === 'object') {\n    // 处理天气信息\n    if (data.weather) {\n      const weatherItem = createResultItem(\n        '🌤️ 天气信息', \n        formatWeatherInfo(data.weather),\n        'success'\n      );\n      resultItems.appendChild(weatherItem);\n    }\n    \n    // 处理地点推荐\n    if (data.recommendations) {\n      const recItem = createResultItem(\n        '📍 推荐地点', \n        formatRecommendations(data.recommendations),\n        'success'\n      );\n      resultItems.appendChild(recItem);\n    }\n    \n    // 处理通用回复\n    if (data.response || data.message) {\n      const responseItem = createResultItem(\n        '🤖 AI助理回复', \n        data.response || data.message,\n        'success'\n      );\n      resultItems.appendChild(responseItem);\n    }\n    \n    // 如果没有识别的字段，显示原始数据\n    if (!data.weather && !data.recommendations && !data.response && !data.message) {\n      const rawItem = createResultItem(\n        '📄 查询结果', \n        JSON.stringify(data, null, 2),\n        'success'\n      );\n      resultItems.appendChild(rawItem);\n    }\n  }\n  \n  // 如果结果为空\n  if (resultItems.children.length === 0) {\n    const emptyItem = createResultItem(\n      '❓ 无结果', \n      '抱歉，没有找到相关信息，请尝试重新表达您的问题。',\n      'warning'\n    );\n    resultItems.appendChild(emptyItem);\n  }\n}\n\n// 创建结果项\nfunction createResultItem(title, content, status = 'success') {\n  const item = document.createElement('div');\n  item.className = 'result-item';\n  \n  const statusClass = `status-${status}`;\n  const statusText = {\n    success: '成功',\n    warning: '注意',\n    error: '错误'\n  }[status] || '信息';\n  \n  item.innerHTML = `\n    <div class=\"result-item-title\">\n      ${title}\n      <span class=\"status-badge ${statusClass}\">${statusText}</span>\n    </div>\n    <div class=\"result-item-content\">${formatContent(content)}</div>\n  `;\n  \n  return item;\n}\n\n// 格式化内容\nfunction formatContent(content) {\n  if (typeof content === 'string') {\n    // 将换行符转换为HTML换行\n    return content.replace(/\\n/g, '<br>');\n  }\n  return String(content);\n}\n\n// 格式化天气信息\nfunction formatWeatherInfo(weather) {\n  if (typeof weather === 'string') return weather;\n  \n  let result = '';\n  if (weather.city) result += `📍 ${weather.city}<br>`;\n  if (weather.temperature) result += `🌡️ 温度：${weather.temperature}<br>`;\n  if (weather.condition) result += `☁️ 天气：${weather.condition}<br>`;\n  if (weather.humidity) result += `💧 湿度：${weather.humidity}<br>`;\n  if (weather.wind) result += `💨 风力：${weather.wind}<br>`;\n  \n  return result || '天气信息获取成功';\n}\n\n// 格式化推荐信息\nfunction formatRecommendations(recommendations) {\n  if (typeof recommendations === 'string') return recommendations;\n  \n  if (Array.isArray(recommendations)) {\n    return recommendations.map((item, index) => {\n      if (typeof item === 'string') {\n        return `${index + 1}. ${item}`;\n      } else if (item.name) {\n        let result = `${index + 1}. ${item.name}`;\n        if (item.address) result += ` - ${item.address}`;\n        if (item.rating) result += ` (评分: ${item.rating})`;\n        return result;\n      }\n      return `${index + 1}. ${JSON.stringify(item)}`;\n    }).join('<br>');\n  }\n  \n  return JSON.stringify(recommendations, null, 2);\n}\n\n// 页面加载完成后初始化\ndocument.addEventListener('DOMContentLoaded', () => {\n  showPlaceholder();\n  queryInput.focus();\n  \n  // 同步左右面板高度\n  syncPanelHeights();\n  \n  // 监听窗口大小变化\n  window.addEventListener('resize', syncPanelHeights);\n});\n\n// 同步左右面板高度\nfunction syncPanelHeights() {\n  const queryPanel = document.querySelector('.query-panel');\n  const resultPanel = document.querySelector('.result-panel');\n  const resultContent = document.querySelector('.result-content');\n  \n  if (queryPanel && resultPanel && resultContent) {\n    // 获取左侧面板的实际高度\n    const queryPanelHeight = queryPanel.offsetHeight;\n    \n    // 设置右侧面板高度匹配左侧\n    resultPanel.style.height = queryPanelHeight + 'px';\n    \n    // 计算右侧内容区域的可用高度\n    const resultHeader = document.querySelector('.result-header');\n    const headerHeight = resultHeader ? resultHeader.offsetHeight : 60;\n    const availableHeight = queryPanelHeight - headerHeight - 64; // 64px为上下padding\n    \n    // 设置内容区域高度\n    resultContent.style.maxHeight = availableHeight + 'px';\n    resultContent.style.minHeight = Math.min(400, availableHeight) + 'px';\n  }\n}\n</script>\n</body>\n</html>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        528,
+        -128
+      ],
+      "id": "443d640d-a33a-4c5c-9bfc-47c1af315e90",
+      "name": "响应：返回UI界面HTML"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \n  \"response\": {{ JSON.stringify($json.html) }}\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1392,
+        112
+      ],
+      "id": "9c202bb1-2cf2-4e38-a700-403e974794a0",
+      "name": "返回最终JSON结果"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=## 当前时间基准（关键参考）\n\n基准：今天 = {{$now.toFormat('yyyy-MM-dd')}} (星期{{ ['一','二', '三', '四', '五', '六', '日'][$now.get('weekday') - 1] }})\n\n{{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "=你是一个智能生活助手，配备了高德地图工具，请注意以下要求：\n\n## 基本原则\n1. 始终使用中文回复用户\n2. 保持专业但不失亲切的语气  \n3. 如果不确定答案，请诚实告知\n\n## 工具使用指南\n当用户询问以下信息时，主动调用相应工具：\n\n### 天气查询\n- 关键词：天气、气温、下雨、晴天等\n- 行动：调用天气查询工具\n- 输出格式：严格按照以下模板生成个性化天气预报\n  \n**天气预报输出模板：**\n1. 🌤️ 今日天气概况\n2. 🌡️ 温度和体感温度  \n3. 👔 穿衣建议\n4. 🚗 出行提醒\n5. 💡 生活小贴士\n\n要求：\n- 语言生动友好，适合日常阅读\n- 包含实用的生活建议\n- 使用emoji增加可读性\n- 总长度控制在200-300字\n\n### 地点查询\n- 关键词：在哪里、地址、怎么去、路线、附近、周边、找等\n- 行动：调用地址搜索、周边搜索或路径规划工具\n- 输出格式：\n  - 使用📍标注地址位置\n  - 用⭐标注评分信息\n  - 用🚶‍♂️🚗标注距离和交通方式\n  - 提供**具体的数字和距离**\n  - 按**距离和评分排序**推荐\n\n**地点查询输出示例：**\n```\n📍 [地点名称]\n🏢 详细地址\n⭐ 评分 | 🚶‍♂️ 距离信息\n💡 特色说明或建议\n```\n\n## 错误处理\n- 如果地点不明确，询问用户具体位置\n- 如果工具调用失败，说明原因并提供替代方案\n- 对于超出工具能力的请求，诚实说明限制",
+          "maxIterations": 20
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        112
+      ],
+      "id": "a674aab1-41a9-4f9c-905a-1a0806eb9dbe",
+      "name": "智能助理核心"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e52d40ef-ea3d-4e33-80f3-1f2b62a452d6",
+              "name": "chatInput",
+              "value": "={{ $json.body.query }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        528,
+        112
+      ],
+      "id": "8d160d88-bff2-495c-9b5f-1b79a6c912a7",
+      "name": "参数提取器"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ae37f8b8-53a4-412d-bc77-b5fd873ad816",
+              "name": "html",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1184,
+        112
+      ],
+      "id": "93fae1b8-229a-4fc8-82b7-93ccbb3f67d3",
+      "name": "字段处理器"
+    },
+    {
+      "parameters": {
+        "content": "#  🤖 智能生活助理 AI Agent 前后端一体化\n\n📋 基本信息\n- 工作流名称：智能生活助理 AI Agent 前后端一体化\n- 版本：v1.0.0\n- 架构模式：AI Agent + MCP工具 + 前后端一体化\n- 技术栈：N8N + DeepSeek + 高德地图 MCP + HTML/CSS/JS\n- 创建者：林月半子\n- 微信：cloud-native-101\n\n\n🎯 功能概述\n\n基于AI Agent架构的全栈智能生活助理系统，集成高德地图MCP工具，提供完整的Web界面和API服务。\n支持天气查询、地点搜索、路径规划等生活服务，具备现代化响应式前端界面和RESTful API后端。\n\n\n⚡ 核心特性\n- 前后端一体化：单一工作流实现完整的Web应用和API服务\n- 响应式界面：现代化深色主题UI，支持移动端和桌面端\n- 实时交互：Ajax异步请求，流畅的用户体验\n- 智能对话：基于DeepSeek模型的自然语言理解和生成\n- 工具集成：无缝集成高德地图MCP工具，提供实时地理数据\n- 状态管理：完善的加载、错误、结果状态切换\n- 滚动优化：固定布局设计，支持大量数据的滚动查看\n\n\n🛠️ 支持功能\n1. Web界面服务：提供完整的HTML前端界面\n2. 天气查询API：个性化天气预报，包含生活建议\n3. 地点搜索API：地址查询和POI周边推荐\n4. 路径规划API：多种出行方式的路线规划\n5. 实时数据API：距离计算和时间估算\n\n\n🎨 界面特色\n- 深色主题：护眼的深色配色方案\n- 渐变效果：现代化的背景动画和按钮效果\n- 响应式布局：左右分栏设计，自适应屏幕尺寸\n- 状态指示：清晰的成功/警告/错误状态标识\n- 交互反馈：丰富的hover效果和动画过渡\n\n\n🔄 系统架构\n1. 前端服务：/webhook/smart-life-assistant 提供Web界面\n2. API服务：/webhook/smart-assistant 处理业务逻辑\n3. AI推理：DeepSeek模型进行意图识别和内容生成\n4. 工具调用：高德地图MCP工具获取实时数据\n5. 结果渲染：格式化输出，支持JSON和HTML双格式\n\n\n📊 数据流转\n用户请求 → Web界面 → API接口 → AI Agent → MCP工具 → 数据处理 → 前端渲染\n\n\n🌐 接口设计\n- GET /webhook/smart-life-assistant - 获取Web界面\n- POST /webhook/smart-assistant - 智能查询API\n{\n  \"query\": \"用户查询内容\",\n  \"timestamp\": \"请求时间戳\"\n}\n\n\n⚠️ 部署要求\n- 环境变量：配置高德地图API Key到 AMAP_API_KEY\n- 网络访问：确保n8n实例可访问高德地图MCP服务\n\n\n💡 使用场景\n- 商务出差：酒店推荐、路线规划、天气查询\n- 日常生活：周边服务、餐厅推荐、出行建议\n- 旅游规划：景点查询、交通指南、天气预报\n- 办公助手：会议地点导航、客户拜访路线规划\n\n\n🔧 技术亮点\n- 单一工作流：前后端逻辑统一管理，降低部署复杂度\n- 状态同步：前端状态与后端数据实时同步\n- 错误处理：完善的异常捕获和用户友好的错误提示\n- 性能优化：异步处理、DOM优化、内存管理\n",
+        "height": 1664,
+        "width": 1824,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        -768
+      ],
+      "id": "c089b378-00e0-4f9b-b346-1cb739248129",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "智能助理核心",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Streamable": {
+      "ai_tool": [
+        [
+          {
+            "node": "智能助理核心",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "触发器：接收生成指令": {
+      "main": [
+        [
+          {
+            "node": "参数提取器",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "触发器：提供UI界面": {
+      "main": [
+        [
+          {
+            "node": "响应：返回UI界面HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "智能助理核心": {
+      "main": [
+        [
+          {
+            "node": "字段处理器",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "参数提取器": {
+      "main": [
+        [
+          {
+            "node": "智能助理核心",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "字段处理器": {
+      "main": [
+        [
+          {
+            "node": "返回最终JSON结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "756dde55-c6e8-4b5c-be9b-d49c15609d29",
+  "meta": {
+    "instanceId": "a152539bc323133bde80781a1dc51fefe2ad2e9f6579ca96b98f3bb66ae5bb00"
+  },
+  "id": "k9CdEMJwmanJmMuF",
+  "tags": []
+}

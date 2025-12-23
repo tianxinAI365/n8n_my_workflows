@@ -1,0 +1,763 @@
+{
+  "name": "网页爬取教学示例",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1440,
+        128
+      ],
+      "id": "f510b0e5-b5bb-4007-871f-f6f0996ed646",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "31898771-d7e1-45a1-a257-eeb4eafaf5c9",
+              "name": "urls",
+              "value": "[\"https://www.globalsecurity.org/military/library/news/daily/index.html\", \"https://www.lawfaremedia.org/article/highlights\", \"https://foreignpolicy.com\"]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1264,
+        128
+      ],
+      "id": "824ea849-6974-4bed-82ab-da4bd1eb56a9",
+      "name": "数据源"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "urls",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1072,
+        128
+      ],
+      "id": "d03c7387-ec9f-4c98-a065-6f6a277fbe2b",
+      "name": "列表拆分"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -864,
+        128
+      ],
+      "id": "86cdaddf-c7e4-48e2-a6e6-4cf31fe29918",
+      "name": "循环爬取网站"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.links }}{{ $json.batches }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=角色\n你是一位专业的网络爬虫和数据提取 AI。\n\n任务\n分析新闻网站主页/列表页的可见内容，识别所有新闻文章条目，并为每条提取：\n\ntitle：新闻标题（去掉末尾日期部分，但不删正文）。\n\nurl：文章的完整绝对 URL（相对路径需用基础 URL 补全）。\n\nlisted_date：如果该条标题后面或同一条目紧邻位置出现日期（如标题右侧的小字、同一块里的日期徽标/时间戳），或者在 URL 中有时间标识（如 URL 中有 250903 等样式的时间标志），请提取并标准化为 YYYY-MM-DD（Europe/London 时区）；若未发现则为 \"\"。\n\nlisted_date_raw：原始日期字符串（未找到则为 \"\"）。\n\n仅处理新闻文章；忽略“关于我们/联系我们/订阅/广告/隐私政策/招聘/登录/往期/标签页/分类页”等非文章链接。\n\n解析与规范化规则\n标题后的日期：优先识别与该标题同一条目中的日期（如“Title — Aug 12, 2025”“Title (12 Aug 2025)”或同卡片/同行上的日期小字）。\n\n可识别的日期格式（不完整不输出）：\n\nYYYY-MM-DD、YYYY/MM/DD\n\nDD MMM YYYY / MMM DD, YYYY（如 12 Aug 2025 / Aug 12, 2025；Aug. 也算）\n\nDD Month YYYY / Month DD, YYYY（完整英文月份）\n\nToday/Yesterday → 转为 Europe/London 的当天/前一天日期\n\n歧义规则：08/12/2025 这类含斜杠且月日都 ≤12的格式存在歧义，不要猜；此时把该串放入 listed_date_raw，listed_date 置为 \"\"。\n\n清洗：删除日期分隔符前后的连字符/点/括号（如 Title — Aug 12, 2025 → title 去掉日期部分）。\n\nURL 处理：\n\n将相对链接补全为绝对链接；\n\n去除锚点与多余空白；\n\n过滤 mailto:, tel:, javascript: 等伪链接。\n\n去重：按绝对 URL 去重，仅保留第一条。\n\n不要臆造：若未发现日期，listed_date 与 listed_date_raw 都为 \"\"。\n\n输入数据\n基础 URL：{{ $json.links }}\n页面内容：上游节点传入的文本/HTML/Markdown\n"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        16,
+        96
+      ],
+      "id": "6e821b13-99e1-494e-abf1-3ca40cf033b7",
+      "name": "识别并提取新闻链接",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "[\n  {\n    \"title\": \"\",\n    \"url\": \"\"\n  }\n]"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        176,
+        272
+      ],
+      "id": "69da8e5e-a22e-4c1e-bf21-fa8caf72b7fa",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        16,
+        272
+      ],
+      "id": "2e6c3213-f241-46d8-9395-f0507e14120d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7XiOmwInMeMYKd1i",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0e7c6356-f299-43ed-9e87-bfa0c89e9db9",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -304,
+        112
+      ],
+      "id": "e4123ec2-0968-4d6d-aa03-01be9b2538c2",
+      "name": "判断抓取状态"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ec2827bc-7493-492c-a338-2d1f7dd62cc6",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1440,
+        96
+      ],
+      "id": "5d49d194-ee46-45d7-9fd5-c91b238e52d5",
+      "name": "判断抓取状态1"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro-preview-06-05",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        224
+      ],
+      "id": "02453eef-ba29-4fe2-b594-42064c61e3cc",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7XiOmwInMeMYKd1i",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        304,
+        80
+      ],
+      "id": "3d5482f3-71b4-4ce8-913d-95ae40c3650d",
+      "name": "新闻列表拆分"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        656,
+        80
+      ],
+      "id": "e325b42e-99df-4f2f-aead-9be711fd77ab",
+      "name": "循环爬取新闻详情"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -656,
+        144
+      ],
+      "id": "ed4480b1-6b93-4291-aaa5-06c19f284b7d",
+      "name": "等待",
+      "webhookId": "859e2a2c-0efe-4dec-8fc1-23d9a05d230f"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        96
+      ],
+      "id": "d4c94c61-a7f5-4072-810a-fcd226d12921",
+      "name": "等待1",
+      "webhookId": "6a296532-99ff-49ff-9be8-fe21d128d364"
+    },
+    {
+      "parameters": {
+        "maxItems": 2
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        480,
+        80
+      ],
+      "id": "57a86ee9-169b-4c35-8f23-2c8335025da0",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "operation": "scrape",
+        "url": "={{ $json.urls }}",
+        "requestOptions": {}
+      },
+      "type": "@mendable/n8n-nodes-firecrawl.firecrawl",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        144
+      ],
+      "id": "7d78e988-2cfe-4960-962f-3765128d16d8",
+      "name": "网站内容爬取",
+      "retryOnFail": true,
+      "credentials": {
+        "firecrawlApi": {
+          "id": "uV390x38lFuk9MEM",
+          "name": "Firecrawl account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "scrape",
+        "url": "={{ $json.url }}",
+        "requestOptions": {}
+      },
+      "type": "@mendable/n8n-nodes-firecrawl.firecrawl",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        96
+      ],
+      "id": "9397ae4c-3475-4405-a0fa-7171f01f983b",
+      "name": "新闻详情内容爬取",
+      "retryOnFail": true,
+      "credentials": {
+        "firecrawlApi": {
+          "id": "uV390x38lFuk9MEM",
+          "name": "Firecrawl account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        -48
+      ],
+      "id": "d06130fa-9b93-4323-9a30-247ed45588f3",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7XiOmwInMeMYKd1i",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"title\": \"\",\n  \"summary\": \"\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1856,
+        224
+      ],
+      "id": "a607952e-71a2-412f-894e-f7d8a2b76e3c",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Add a new field called 'myNewField' to the JSON of the item\n$input.item.json.myNewField = 1;\n\nreturn $input.item;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -656,
+        -208
+      ],
+      "id": "4496e3be-1d2d-4800-86ee-9000707160a3",
+      "name": "格式处理"
+    },
+    {
+      "parameters": {
+        "fromEmail": "xxxxxxx@163.com",
+        "toEmail": "aisaer@qq.com",
+        "subject": "=新闻播报稿 - {{$now.toFormat('DD')}}",
+        "emailFormat": "text",
+        "text": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        288,
+        -208
+      ],
+      "id": "bde22a69-c368-4c4e-a7f3-c045a5fd6b2e",
+      "name": "Send email",
+      "webhookId": "f368b3df-7399-461f-9ecb-ef1c49d6a76d",
+      "credentials": {
+        "smtp": {
+          "id": "sRaHcePylHHQuGY2",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 第一步：为每个项目添加新字段\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\n// 第二步：将所有项目聚合为一条信息\nconst aggregatedResult = {\n  items: $input.all(),  // 包含所有12条处理后的项目\n  totalCount: $input.all().length,  // 可以添加总数等元数据\n  aggregatedAt: new Date().toISOString()  // 可以添加聚合时间等信息\n};\n\n// 返回聚合后的单条信息\nreturn [aggregatedResult];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        -208
+      ],
+      "id": "6faf1e31-f6a6-4c48-9ccb-504614692880",
+      "name": "输出聚合"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.items }}",
+        "options": {
+          "systemMessage": "=你是一家顶尖新闻机构的首席撰稿人，任务是为晚间新闻主播撰写播报稿。你的输入是一个包含当天新闻摘要的JSON对象，你需要根据它生成一份专业、流畅、口语化的简体中文新闻稿。\n\n输入数据格式:\n你将从 {{$json.items}} 中获取一个JSON数组。这个数组结构比较特殊，你需要理解并处理两种关联的条目：\n\n摘要条目: 包含 json.output.title 和 json.output.summary。这是你需要播报的核心内容。\n\n来源条目: 包含 json.title 和 json.url。这为你提供了新闻的来源链接。\n\n核心任务与逻辑:\n\n识别并去重: 你的首要任务是播报所有独特的摘要。输入数据中可能包含完全重复的摘要内容，请确保每条不重复的新闻只播报一次。\n\n匹配来源: 对于每一条独特的摘要条目（例如，标题为 \"Gaza Peace\" 的摘要），你需要在整个数组中寻找一个标题 (json.title) 完全相同的来源条目，并从该条目的 json.url 中提取新闻来源。例如，从 https://www.globalsecurity.org/military/world/war/operation-iron-swords.htm 中提取出 GlobalSecurity.org 作为来源。如果找不到匹配的来源条目，则使用“综合报道”作为来源。\n\n生成播报稿: 根据你提取并整理好的【标题、摘要、来源】信息，严格按照下面的结构和要求生成最终文稿。\n\n【播报稿结构】\n\n开场白 (引言)\n\n以一句问候开始，例如“各位观众晚上好，欢迎收看今天的《全球安全视野》。”\n\n接着用一到两句话，根据所有新闻摘要，高度概括今天所有新闻的核心主题或最值得关注的动态。\n\n核心新闻播报\n\n使用自然的转场语开始，例如“首先，我们来看今天的第一条重要新闻。”\n\n对于整理出的每一条新闻，请遵循以下格式：\n\n标题播报: 先播报新闻的标题。\n\n内容详述: 接着用口语化的方式，详细播报新闻的摘要内容。\n\n来源提示: 在内容结束后，简单提示新闻来源，例如“本条新闻编译自 GlobalSecurity.org。”\n\n在两条新闻之间，加入简单的过渡词，如“接下来”、“另一则值得关注的新闻是：”等。\n\n结束语\n\n在所有新闻播报完毕后，用一句话总结今天的内容。\n\n最后以一句标准的结束语结尾，例如“感谢您的收看，我们明天同一时间再见。”\n\n【语言风格要求】\n\n专业权威: 保持中立、客观的立场。\n\n口语流畅: 使用简洁、易懂的句子，避免复杂的长句和书面语。\n\n节奏感: 确保文稿读起来朗朗上口，有自然的停顿和节奏。\n\n【最终输出要求】\n\n你的最终输出必须是纯文本格式。\n\n严禁包含任何Markdown标记（如 #, [](), ** 等）。\n\n必须完全使用简体中文。"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -96,
+        -208
+      ],
+      "id": "02fb7d88-e5d2-400b-9c79-dd46827d181c",
+      "name": "新闻播报总编辑"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.data.markdown }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=# 角色： 你是一位专业的情报编辑。你的任务是为一篇给定的新闻文章生成一段简洁、中立的摘要，并将其与原始标题一起，以结构化的 JSON 格式输出。  # 任务：  仔细阅读下方提供的文章标题和内容。  识别出文章的核心论点、关键事实和主要结论。  撰写一段简洁、客观、不含个人观点的摘要（约3-5句话）。  将原始的文章标题和您生成的摘要组合成一个 JSON 对象。  # 输出格式（严格遵守）：  你的整个回复必须是，且只能是一个有效的、单一的 JSON 对象 {}。  你的回复必须以 { 开始，并以 } 结束。  该对象必须且仅必须包含两个键：\"title\" (字符串) 和 \"summary\" (字符串)。  绝对不要将结果包裹在任何其他键（如 \"output\"）中。  不要在最终的 JSON 对象之外添加任何解释、注释或文本。  # 示例输出： { \"title\": \"这里是原始的文章标题\", \"summary\": \"这里是您根据文章内容生成的摘要文本。\" }  # 输入数据： 文章标题: {{ $('循环爬取新闻详情').item.json.title }} 文章内容: {{ $('判断抓取状态1').item.json.data.markdown }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1696,
+        64
+      ],
+      "id": "a2ef65f9-5ea5-4067-9710-69cbf162e67f",
+      "name": "Basic LLM Chain",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === n8n Code Node (Run Once) ===\n// 读取 markdown → 极简黑名单过滤 → 单条输出 {links: [...], count, batches?}\n\nfunction pickMarkdown() {\n  const cands = [\n    items?.[0]?.json?.data?.markdown,\n    items?.[0]?.json?.markdown,\n    $json?.data?.markdown,\n    $json?.markdown,\n  ];\n  for (const v of cands) if (typeof v === 'string' && v.length) return v;\n  return '';\n}\nfunction normalize(md) {\n  return (md || '')\n    .replace(/\\r\\n?/g, '\\n')\n    .replace(/\\\\</g, '<')\n    .replace(/\\u00A0/g, ' ')\n    .trim();\n}\n\nconst md = normalize(pickMarkdown());\n\n// —— 仅做极简黑名单过滤 —— //\nconst TEXT_BLACKLIST = [\n  'subscribe','newsletter','mailing list',\n  'donation','donate','advertise',\n  'sign in','login','log in',\n  'privacy','cookie','do not sell my personal information'\n];\nconst URL_BLACKLIST = [\n  '/subscribe','/signin','/login','/privacy','/cookies',\n  '/advertise','/sitemap','#'\n];\nconst DROP_PROTOCOLS = ['mailto:', 'javascript:'];\nconst DROP_EXTS = ['.png','.jpg','.jpeg','.gif','.svg','.webp','.ico'];\n\n// 可选：轻量白名单（关闭=不过滤）\nconst LIGHT_WHITELIST_ENABLED = false;\nconst URL_LIGHT_WHITELIST = ['report','policy','news','/pdf','/library/','/military/'];\n\nfunction hasBlackText(t){ t=(t||'').toLowerCase(); return TEXT_BLACKLIST.some(k=>t.includes(k)); }\nfunction hasBlackUrl(u){\n  const low=(u||'').toLowerCase();\n  if (DROP_PROTOCOLS.some(p=>low.startsWith(p))) return true;\n  if (URL_BLACKLIST.some(k=>low.includes(k))) return true;\n  if (DROP_EXTS.some(ext=>low.endsWith(ext))) return true;\n  return false;\n}\nfunction passLightWhitelist(u){\n  if (!LIGHT_WHITELIST_ENABLED) return true;\n  const low=(u||'').toLowerCase();\n  return URL_LIGHT_WHITELIST.some(k=>low.includes(k));\n}\n\nconst linkRe = /\\[([^\\]]+?)\\]\\((https?:\\/\\/[^\\s)]+)(?:\\s+\"[^\"]*\")?\\)/g;\nlet results = [];\nlet m;\nwhile ((m = linkRe.exec(md)) !== null) {\n  const text = m[1].trim();\n  const url  = m[2].trim();\n  if (text.startsWith('!') || /^!\\[/.test(text)) continue; // 图片锚文本\n  if (hasBlackText(text)) continue;\n  if (hasBlackUrl(url)) continue;\n  if (!passLightWhitelist(url)) continue;\n  let host = ''; try { host = new URL(url).host.toLowerCase(); } catch {}\n  results.push({ text, url, host });\n}\n\n// 去重\nconst seen = new Set();\nresults = results.filter(r=>{\n  const key = `${r.url}##${r.text}`;\n  if (seen.has(key)) return false;\n  seen.add(key);\n  return true;\n});\n\n// —— 可选：在同一条里做“字符上限分片”，避免一次 prompt 过长 —— //\nconst ENABLE_BATCHES = true;                  // 需要则 true\nconst MAX_CHARS_PER_BATCH = 12000;            // 每批最大字符数（自己调）\nlet batches = [];\nif (ENABLE_BATCHES && results.length) {\n  // 把 links 序列化成更适合喂给 LLM 的行文本\n  const lines = results.map((r,i)=>`${i+1}. ${r.text}  <${r.url}>`);\n  let cur = [];\n  let curLen = 0;\n  for (const line of lines) {\n    if (curLen + line.length + 1 > MAX_CHARS_PER_BATCH) {\n      batches.push(cur.join('\\n'));\n      cur = [];\n      curLen = 0;\n    }\n    cur.push(line);\n    curLen += line.length + 1;\n  }\n  if (cur.length) batches.push(cur.join('\\n'));\n}\n\n// 诊断兜底（仍返回一条，不扇出）\nif (!md) {\n  return [{ json: { _diagnostic: 'no_markdown_input' } }];\n}\nif (results.length === 0) {\n  return [{ json: { _diagnostic: 'no_links_after_min_filter', _sample: md.slice(0, 500) } }];\n}\n\n// —— 单条输出 —— //\nreturn [{\n  json: {\n    count: results.length,\n    links: results,      // 交给下游一次性使用或二次筛选\n    batches: batches,    // 可选：若不需要可以忽略\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        96
+      ],
+      "id": "64f89e65-41cf-4e54-835f-e2048a0721e1",
+      "name": "预筛选（规避风控）"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "数据源",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "数据源": {
+      "main": [
+        [
+          {
+            "node": "列表拆分",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "列表拆分": {
+      "main": [
+        [
+          {
+            "node": "循环爬取网站",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "循环爬取网站": {
+      "main": [
+        [
+          {
+            "node": "格式处理",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "等待",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "识别并提取新闻链接": {
+      "main": [
+        [
+          {
+            "node": "新闻列表拆分",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "识别并提取新闻链接",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "识别并提取新闻链接",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "判断抓取状态": {
+      "main": [
+        [
+          {
+            "node": "预筛选（规避风控）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "判断抓取状态1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "新闻列表拆分": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "循环爬取新闻详情": {
+      "main": [
+        [
+          {
+            "node": "循环爬取网站",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "等待1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "等待": {
+      "main": [
+        [
+          {
+            "node": "网站内容爬取",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "等待1": {
+      "main": [
+        [
+          {
+            "node": "新闻详情内容爬取",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "循环爬取新闻详情",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "网站内容爬取": {
+      "main": [
+        [
+          {
+            "node": "判断抓取状态",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "新闻详情内容爬取": {
+      "main": [
+        [
+          {
+            "node": "判断抓取状态1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "新闻播报总编辑",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "格式处理": {
+      "main": [
+        [
+          {
+            "node": "输出聚合",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "输出聚合": {
+      "main": [
+        [
+          {
+            "node": "新闻播报总编辑",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "新闻播报总编辑": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "循环爬取新闻详情",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "预筛选（规避风控）": {
+      "main": [
+        [
+          {
+            "node": "识别并提取新闻链接",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "99cba906-0695-4aea-afae-183a363d3ec5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b16314afda560b51eb9260794262da248847109995eb844b9ed66b344673a982"
+  },
+  "id": "C4rVPYfRkPdcdJDw",
+  "tags": []
+}

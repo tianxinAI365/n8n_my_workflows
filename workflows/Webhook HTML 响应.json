@@ -1,0 +1,85 @@
+{
+  "name": "Webhook HTML 响应",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# 🌐 Webhook HTML 响应\n\n📋 基本信息\n- 工作流名称：Webhook HTML 响应\n- 版本：v1.0\n- 架构模式：基础 Web 服务\n- 技术栈：N8N\n- 创建者：林月半子\n- 微信：cloud-native-101\n\n\n🎯 功能概述\n\n这是一个基础但核心的教学工作流，旨在演示如何利用 n8n 的 Webhook 功能，使其超越传统的数据接口角色，转变为一个能够直接对外提供完整 Web 页面的轻量级 Web 服务器。它是后续所有 n8n 全栈开发实践的起点。\n\n\n⚡ 核心特性\n- 静态页面服务：展示了n8n直接向浏览器提供HTML、CSS内容的能力。\n- HTTP头部控制：通过配置Content-Type响应头，精确控制浏览器的渲染行为。\n- 后端即前端：完美诠释了使用后端工作流工具交付前端用户界面的核心理念。\n- 极简零依赖：仅使用两个n8n基础节点（Webhook, Respond to Webhook）即可实现，无需任何外部服务。\n\n\n🛠️ 支持功能\n1. 渲染静态网页：当用户通过浏览器访问其专属URL时，会展示一个带有CSS动画效果的“Hello World”欢迎页面。\n\n\n🔄 交互流程\n1. 接收请求：Webhook节点作为入口，监听来自浏览器的HTTP GET请求。\n2. 指定响应模式：触发器设置为Using 'Respond to Webhook' Node模式，将响应权交给后续节点。\n3. 构建HTML响应：Respond to Webhook节点的主体中已预先写入了完整的HTML和CSS代码。\n4. 发送网页：该节点将HTML内容，连同 html 的响应头，一同发送给浏览器，浏览器接收后即可渲染出网页。\n\n\n⚠️ 使用说明\n- 激活工作流：使用前，请确保此工作流处于激活状态。\n- 访问方式：在浏览器中打开Webhook节点提供的测试或生产URL，即可查看效果。\n- Content-Type配置：为确保浏览器正确解析，Respond to Webhook节点的响应头Content-Type应设置为 html。\n- 教学基石：此工作流是学习n8n前端能力的基础，理解其原理对后续开发至关重要。",
+        "height": 704,
+        "width": 1168,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        -288
+      ],
+      "id": "2f19774c-eaf5-4d67-9c22-c0f17f532aee",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Hello World</title>\n    <style>\n        body {\n            font-family: 'Arial', sans-serif;\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            margin: 0;\n            padding: 0;\n            height: 100vh;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n        }\n        \n        .container {\n            text-align: center;\n            background: rgba(255, 255, 255, 0.1);\n            backdrop-filter: blur(10px);\n            border-radius: 20px;\n            padding: 60px 40px;\n            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);\n            border: 1px solid rgba(255, 255, 255, 0.2);\n            animation: fadeInUp 1s ease-out;\n        }\n        \n        h1 {\n            color: white;\n            font-size: 3.5rem;\n            margin: 0;\n            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);\n            animation: bounce 2s infinite;\n        }\n        \n        p {\n            color: rgba(255, 255, 255, 0.8);\n            font-size: 1.2rem;\n            margin-top: 20px;\n            animation: fadeIn 2s ease-in;\n        }\n        \n        .emoji {\n            font-size: 4rem;\n            animation: rotate 3s linear infinite;\n            display: inline-block;\n            margin: 20px 0;\n        }\n        \n        @keyframes fadeInUp {\n            from {\n                opacity: 0;\n                transform: translateY(30px);\n            }\n            to {\n                opacity: 1;\n                transform: translateY(0);\n            }\n        }\n        \n        @keyframes bounce {\n            0%, 20%, 50%, 80%, 100% {\n                transform: translateY(0);\n            }\n            40% {\n                transform: translateY(-10px);\n            }\n            60% {\n                transform: translateY(-5px);\n            }\n        }\n        \n        @keyframes fadeIn {\n            from {\n                opacity: 0;\n            }\n            to {\n                opacity: 1;\n            }\n        }\n        \n        @keyframes rotate {\n            from {\n                transform: rotate(0deg);\n            }\n            to {\n                transform: rotate(360deg);\n            }\n        }\n        \n        @media (max-width: 768px) {\n            h1 {\n                font-size: 2.5rem;\n            }\n            \n            .container {\n                padding: 40px 20px;\n                margin: 20px;\n            }\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"emoji\">🌍</div>\n        <h1>Hello World!</h1>\n        <p>欢迎来到我的第一个网页</p>\n    </div>\n    \n    <script>\n        // 简单的交互效果\n        document.addEventListener('click', function() {\n            const container = document.querySelector('.container');\n            container.style.transform = 'scale(1.05)';\n            setTimeout(() => {\n                container.style.transform = 'scale(1)';\n            }, 200);\n        });\n        \n        // 控制台输出\n        console.log('Hello World from JavaScript!');\n    </script>\n</body>\n</html>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -352,
+        -176
+      ],
+      "id": "16eb7b45-75cf-4877-9f68-e821d43e3f66",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "path": "3f6253d9-ad41-42f9-9062-015caf5a0175",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -560,
+        -176
+      ],
+      "id": "2c5d5a6d-b255-4864-9ab7-a43b0f069b15",
+      "name": "Webhook",
+      "webhookId": "3f6253d9-ad41-42f9-9062-015caf5a0175"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d8ff9f64-25d6-4067-8dc8-e9f5ec1b2352",
+  "meta": {
+    "instanceId": "a152539bc323133bde80781a1dc51fefe2ad2e9f6579ca96b98f3bb66ae5bb00"
+  },
+  "id": "b9lKyKzd0pVU8fY0",
+  "tags": []
+}

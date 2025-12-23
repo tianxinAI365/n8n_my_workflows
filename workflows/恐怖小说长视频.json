@@ -1,0 +1,1898 @@
+{
+  "name": "恐怖小说长视频",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://host.docker.internal:7860/gradio_api/call/basic_tts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": [\n    {\n      \"meta\": { \"_type\": \"gradio.FileData\" },\n      \"path\": \"https://storage.googleapis.com/n8n-nca-bucket/Horror_story_Voice.MP3\"\n    },\n    \"\",\n    \"{{ $('Split_by_Sentence').item.json.segment }}\",\n    false,\n    true,\n    3,\n    0.15,\n    32,\n    1\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1552,
+        720
+      ],
+      "id": "31bbe075-713f-4a0d-8cc9-5e55d55e7bba",
+      "name": "Local F5-TTS"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:7860/gradio_api/call/switch_tts_model/{{ $json.event_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1776,
+        720
+      ],
+      "id": "0b1d54cb-66b3-42fe-9b29-79a192cf365e",
+      "name": "Get audio"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "[\n  {\n    \"index\": \"001\",\n    \"subtitle\": \"subtitle\",\n    \"context\": \"context\"\n  }\n]\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1696,
+        -128
+      ],
+      "id": "4654fce6-72e4-44f5-a40f-d5710d3f01f3",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        -128
+      ],
+      "id": "81e2844c-9c17-4956-a62d-986b63b517f0",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "BqVogp06B1LNtCm7",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2800,
+        -112
+      ],
+      "id": "086d40b8-dd16-46ac-9cfe-45b8fb3b9246",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "BqVogp06B1LNtCm7",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        272
+      ],
+      "id": "21a52064-c8df-4061-9dd9-575bacec03c6",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "BqVogp06B1LNtCm7",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        272
+      ],
+      "id": "7ac080bf-f93d-4cd0-a1c5-0f398f74ad92",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "BqVogp06B1LNtCm7",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "object",
+        "operation": "create",
+        "bucketName": "n8n-nca-bucket-jay",
+        "objectName": "={{ \"T\" + $('Loop_Video').item.json.index + \"_\" + new Date().toLocaleTimeString('en-GB', { hour12: false }).replace(/:/g, '_') }}",
+        "createData": {},
+        "createQuery": {},
+        "encryptionHeaders": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.googleCloudStorage",
+      "typeVersion": 1,
+      "position": [
+        3104,
+        720
+      ],
+      "id": "cc7e26cb-b938-435c-87c1-9acdad3daa01",
+      "name": "Create an object",
+      "credentials": {
+        "googleCloudStorageOAuth2Api": {
+          "id": "AZ5nOyW0hsFkgf5O",
+          "name": "Google Cloud Storage account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "=ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {{ $json.data }}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        720
+      ],
+      "id": "dea9f29e-99bc-4520-aa52-32902214a437",
+      "name": "Audio Length",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "formTitle": "Horror Story",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Topic",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        1056,
+        -320
+      ],
+      "id": "7fc389e3-8c2c-4c89-8cac-a28aec250d74",
+      "name": "Input_Topic",
+      "webhookId": "ffe5669f-7afb-469d-8c09-94e24c67c5cd"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw",
+          "mode": "list",
+          "cachedResultName": "Horror_Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{ $json.Topic }}",
+            "Index": "={{\"=ROW()-1\"}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Index",
+              "displayName": "Index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Description ",
+              "displayName": "Description ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tag",
+              "displayName": "Tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Production",
+              "displayName": "Production",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1312,
+        -320
+      ],
+      "id": "8ba23523-51b9-4a95-a59e-2c7aad90bb5c",
+      "name": "Store_Topic",
+      "credentials": {
+        "googleApi": {
+          "id": "xnydnDy6nRXX2Vo9",
+          "name": "VertexAI Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Please create an original horror story outline based on the title: {{ $('Input_Topic').item.json.Topic }}.\n\nRequirements:\nThe story must be structured in 7 parts.\nStory Lauguage: \nEnglish\n\nEach part includes:\nA short and suspenseful subtitle\nA creepy or unsettling plot summary (context) for that part\nName the main characters (e.g. the protagonist, antagonist, or supernatural entities).\nThe story should evoke a sense of dread, mystery, and fear, with logical progression.\nUse only Chinese commas and periods as punctuation.\nOutput strictly in the JSON format shown below.\nDo not include any additional explanation or text besides the JSON.\n\nOutput format:\n[\n  {\n    \"index\": \"001\",\n    \"subtitle\": \"subtitle\",\n    \"context\": \"context\"\n  }\n]\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1536,
+        -320
+      ],
+      "id": "a8985443-6160-44fc-b75b-83a05d520ad3",
+      "name": "Story_Outline"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        -320
+      ],
+      "id": "57163875-3595-4b64-959c-e2d0f07b2b79",
+      "name": "Split_Outline"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2144,
+        -320
+      ],
+      "id": "caf038a4-a39b-4d7c-ba53-7128f97d8827",
+      "name": "Loop_Content"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a366e5f2-9e48-4808-94ff-5c950220c3a6",
+              "name": "output",
+              "value": "={{$('Story_Outline').item.json.output.map(o => `${o.index} ${o.subtitle} ${o.context}`).join(' ')}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2352,
+        -320
+      ],
+      "id": "e10cd4c6-bae5-4114-a637-0d7fd34f465b",
+      "name": "Story_Brief"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3fe4d9a9-238e-4fbc-b7c3-2b1b3402accd",
+              "name": "index",
+              "value": "={{ $('Loop_Content').item.json.index }}",
+              "type": "string"
+            },
+            {
+              "id": "b4ca1f4d-de25-44be-87e0-806fd7e923a9",
+              "name": "subtitle",
+              "value": "={{ $('Loop_Content').item.json.subtitle }}",
+              "type": "string"
+            },
+            {
+              "id": "0a8f6111-fbe6-4945-9aea-35e79e08e763",
+              "name": "context",
+              "value": "={{ $('Loop_Content').item.json.context }}",
+              "type": "string"
+            },
+            {
+              "id": "71a795ca-8c09-4938-a5a5-14417caa3f35",
+              "name": "brief",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2576,
+        -320
+      ],
+      "id": "41455232-4298-4af0-aa1a-ba5c409549eb",
+      "name": "Segment_Brief"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Expand the horror story plot based on the following story outline, section titles, and section plot summaries. Each section should be approximately 200 words in length, roughly equivalent to 2 minutes of narration.\nDo not include Section title in your response.\nDo not include any other content in your response.\n\nStory Lauguage: \nEnglish\n\nStory outline:\n{{ $json.brief }}\n\nSection titles:\n{{ $json.subtitle }}\n\nSection plot summaries:\n{{ $json.context }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        2800,
+        -320
+      ],
+      "id": "040e8696-2c31-4a93-acf8-92bf05827f41",
+      "name": "Segment_Content"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7cf7f418-a842-4856-8940-52b9730ab4e1",
+              "name": "data",
+              "value": "={{$json.output.replace(/\\r?\\n/g, '')}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3168,
+        -320
+      ],
+      "id": "e4ee6dbe-31c9-46d0-b331-b4b04317ee99",
+      "name": "Clean_Content"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e51be39-c452-4328-8c45-badc0203d716",
+              "name": "=CharCount",
+              "value": "={{ ($json['data'] || '').match(/\\b[a-zA-Z]+\\b/g)?.length || 0 }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3392,
+        -320
+      ],
+      "id": "6f22a73c-ad36-4f40-bf8d-fc5cd42b3324",
+      "name": "CharCount"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw",
+          "mode": "list",
+          "cachedResultName": "Horror_Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1251439775,
+          "mode": "list",
+          "cachedResultName": "Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit#gid=1251439775"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{ $('Input_Topic').item.json.Topic }}",
+            "Index": "={{ $('Segment_Brief').item.json.index }}",
+            "Subtitle": "={{ $('Segment_Brief').item.json.subtitle }}",
+            "Brief": "={{ $('Segment_Brief').item.json.context }}",
+            "Context": "={{ $('Clean_Content').item.json.data }}",
+            "count": "={{ $json.CharCount }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Index",
+              "displayName": "Index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subtitle",
+              "displayName": "Subtitle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Brief",
+              "displayName": "Brief",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Context",
+              "displayName": "Context",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "count",
+              "displayName": "count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3600,
+        -320
+      ],
+      "id": "11555ff4-6434-4fd6-806f-f734cc6ba51d",
+      "name": "Store_Content",
+      "credentials": {
+        "googleApi": {
+          "id": "xnydnDy6nRXX2Vo9",
+          "name": "VertexAI Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a366e5f2-9e48-4808-94ff-5c950220c3a6",
+              "name": "output",
+              "value": "={{$('Story_Outline').item.json.output.map(o => `${o.index} ${o.subtitle} ${o.context}`).join(' ')}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        80
+      ],
+      "id": "a6edcf0c-6fb8-45d1-b0eb-f675e2ccae09",
+      "name": "Brief"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Based on the following overall story summary, give this novel an attractive title.\nDo not include any other content in your response.\nDo not use punctuation.\nDo not include '\\n'\nReply with only one title.\n\nNovel story summary:\n{{ $json.output }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1344,
+        80
+      ],
+      "id": "9f335d01-bb1c-4e1c-8d2c-8c3cd89d0c1d",
+      "name": "Story_Title"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Based on the following overall story summary, write an engaging story introduction to be used in the video description section.\nDo not include any other content in your response.\nUse only commas and periods as punctuation.\nReply with only the novel introduction.\nDo not insert newline characters.\n\nOverall story summary:\n{{ $('Brief').item.json.output }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1696,
+        80
+      ],
+      "id": "98f9e35d-b7e6-48d5-b8e4-6ba05cc36106",
+      "name": "Story_Description"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw",
+          "mode": "list",
+          "cachedResultName": "Horror_Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{ $('Input_Topic').item.json.Topic }}",
+            "Title": "={{ $('Story_Title').item.json.output }}",
+            "Description ": "={{ $json.output }}",
+            "Tag": "#horror"
+          },
+          "matchingColumns": [
+            "Topic"
+          ],
+          "schema": [
+            {
+              "id": "Index",
+              "displayName": "Index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Description ",
+              "displayName": "Description ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tag",
+              "displayName": "Tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Production",
+              "displayName": "Production",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2144,
+        80
+      ],
+      "id": "34ee405c-cca7-4707-a1d3-f905a26d4fc9",
+      "name": "Store_Title",
+      "credentials": {
+        "googleApi": {
+          "id": "xnydnDy6nRXX2Vo9",
+          "name": "VertexAI Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw",
+          "mode": "list",
+          "cachedResultName": "Horror_Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1251439775,
+          "mode": "list",
+          "cachedResultName": "Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit#gid=1251439775"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Topic",
+              "lookupValue": "={{ $('Input_Topic').item.json.Topic }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1120,
+        432
+      ],
+      "id": "7afb78e4-314a-414c-ba93-a0d7e4bb245a",
+      "name": "Read_Story",
+      "credentials": {
+        "googleApi": {
+          "id": "xnydnDy6nRXX2Vo9",
+          "name": "VertexAI Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "Index"
+            },
+            {
+              "fieldToAggregate": "Context"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        432
+      ],
+      "id": "2d8d22eb-5ef4-46f5-972a-678ec76f5042",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "663db983-f217-4dbc-833e-e5615b201562",
+              "name": "Context",
+              "value": "={{ $json.Context.join('') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1552,
+        432
+      ],
+      "id": "9e53d638-f4ff-44ca-a991-f969ae8796dc",
+      "name": "Merge_Content"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json.Context;  \n\nconst rawParts = input\n  .split(/(?<=\\.)(?!\")\\s*|\\n{2,}/)\n  .map(p => p.replace(/\\n+/g, ' ').trim())\n  .filter(Boolean);\n\nconst items = [];\nlet buffer = '';\n\nfor (const part of rawParts) {\n  buffer += (buffer ? ' ' : '') + part;\n  const wordCount = buffer.trim().split(/\\s+/).length;\n\n  if (wordCount >= 20) {\n    items.push(buffer.trim());\n    buffer = '';\n  }\n}\nif (buffer.trim()) items.push(buffer.trim());\n\nreturn items.map((segment, i) => ({\n  json: {\n    index: String(i + 1).padStart(4, '0'),\n    segment: segment.replace(/\"/g, '')  \n  }\n}));\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1776,
+        432
+      ],
+      "id": "dae0a7f9-f91c-4263-9cd4-670cf394e392",
+      "name": "Split_by_Sentence"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        720
+      ],
+      "id": "f50b203d-d257-41b7-b0d8-2fcff85cb29a",
+      "name": "Loop_Video"
+    },
+    {
+      "parameters": {
+        "url": "https://api.pexels.com/videos/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.segment }}"
+            },
+            {
+              "name": "per_page",
+              "value": "={{ Math.floor(Math.random() * 10) + 1 }}"
+            },
+            {
+              "name": "orientation",
+              "value": "landscape"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1344,
+        720
+      ],
+      "id": "24b2f9e0-bd7b-46fc-a76a-0cd6c05efbf9",
+      "name": "Pexels",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "rHQgxhzgl4gceRJQ",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7aa5e528-94f3-44e2-b178-197f8d3d9196",
+              "name": "data",
+              "value": "=./video_generation/F5_TTS/{{ (($json.data.match(/\"path\":\\s*\"([^\"]+)\"/) || [])[1] || '').replace('/tmp/gradio/', '').trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2000,
+        720
+      ],
+      "id": "33e7e7af-ef0a-433b-94a8-c07c0de9f175",
+      "name": "Audio_URL"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "=ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {{ $('Pexels').item.json.videos[0].video_files[0].link }}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        2432,
+        720
+      ],
+      "id": "cadf1723-0f45-4fdb-8753-83dd4fa9b6e5",
+      "name": "Video Length",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "=ffmpeg -y \\\n-stream_loop -1 \\\n-i \"{{ $('Pexels').item.json.videos[0].video_files[0].link }}\" \\\n-i \"{{ $('Audio_URL').item.json.data }}\" \\\n-map 0:v:0 \\\n-map 1:a:0 \\\n-vf \"scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2\" \\\n-c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p \\\n-c:a aac -b:a 192k \\\n-t {{ $('Audio Length').item.json.stdout }} \\\n\"./video_generation/Horror_Story/T{{ $('Loop_Video').item.json.index }}.mp4\""
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        2656,
+        720
+      ],
+      "id": "0ab4f9bc-4029-4dfe-9d9c-180c42f88cd5",
+      "name": "Generate video segments",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "fileSelector": "=./video_generation/Horror_Story/T{{ $('Loop_Video').item.json.index }}.mp4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        720
+      ],
+      "id": "b4f8fb7a-ebb0-49a6-9426-9583865bc7dd",
+      "name": "Read_Video_Segments"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=./video_generation/Horror_Story/{{ $('Title').item.json.Title }}/A{{ $('Loop_Video').item.json.index }}.mp4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        3760,
+        720
+      ],
+      "id": "6ce9dd8e-8a69-422b-8666-4bbff1d81664",
+      "name": "Store_Video"
+    },
+    {
+      "parameters": {
+        "command": "=mkdir -p ./video_generation/Horror_Story/\"{{ $json.Title }}\"\n"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        2576,
+        80
+      ],
+      "id": "da421eee-c153-4b60-80cf-6d68af0c11ff",
+      "name": "Execute Command1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "98c0aefb-718b-4545-a40c-6c0d9915812f",
+              "name": "Title",
+              "value": "={{ $json.Title.trim().replace(/[^\\p{L}\\p{N} ]/gu, '').replace(/ /g, '_') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2352,
+        80
+      ],
+      "id": "a9528a72-2961-4a0e-8b11-9467b527ea39",
+      "name": "Title"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8080/v1/video/caption",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "thekey"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"video_url\": \"https://storage.googleapis.com/{{ $json.bucket }}/{{ $json.name }}\",\n    \"settings\": {\n        \"line_color\": \"#FFFFFF\",\n        \"word_color\": \"#FFFF00\",\n        \"all_caps\": false,\n        \"max_words_per_line\": 3,\n        \"font_size\": 60,\n        \"bold\": false,\n        \"italic\": false,\n        \"underline\": false,\n        \"strikeout\": false,\n        \"outline_width\": 3,\n        \"shadow_offset\": 4,\n        \"style\": \"highlight\",\n        \"font_family\": \"The Bold Font\",\n        \"position\": \"bottom_center\"\n    },\n    \"id\": \"gdrive-five\"\n}",
+        "options": {
+          "timeout": 50000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3328,
+        720
+      ],
+      "id": "bf1830ff-2ccc-4253-81f5-d075474fc773",
+      "name": "Add Captions",
+      "notesInFlow": true,
+      "notes": "/v1/video/caption"
+    },
+    {
+      "parameters": {
+        "bucketName": "nca-toolkit",
+        "fileKey": "={{ $json.response.split(\"/\")[4] }}"
+      },
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        3552,
+        720
+      ],
+      "id": "6f1d235c-b872-4a48-ba98-a70b7714cbe0",
+      "name": "Download a file"
+    },
+    {
+      "parameters": {
+        "command": "=ls ./video_generation/Horror_Story/{{ $json.Title }}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        1056
+      ],
+      "id": "01473b7f-95ef-45d4-bb21-b3058c5494b9",
+      "name": "Read File Name7"
+    },
+    {
+      "parameters": {
+        "fileSelector": "=./video_generation/{{ $('Title1').item.json.Title }}.mp4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        1056
+      ],
+      "id": "eea38666-5051-4aca-a0f3-763ff71ea7c5",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw",
+          "mode": "list",
+          "cachedResultName": "Horror_Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 920187057,
+          "mode": "list",
+          "cachedResultName": "Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l6ww-S9XMigEHhyFtmWhl_-_Hf1DoKdkZtdsQggHwhY/edit#gid=920187057"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Production": "Done",
+            "Topic": "={{ $('Input_Topic').item.json.Topic }}"
+          },
+          "matchingColumns": [
+            "Topic"
+          ],
+          "schema": [
+            {
+              "id": "Index",
+              "displayName": "Index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Description ",
+              "displayName": "Description ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Tag",
+              "displayName": "Tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Production",
+              "displayName": "Production",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        2672,
+        1056
+      ],
+      "id": "3221ece9-8c1c-46ce-9c12-93ab9cd593a6",
+      "name": "Update Status A",
+      "credentials": {
+        "googleApi": {
+          "id": "xnydnDy6nRXX2Vo9",
+          "name": "VertexAI Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        912,
+        1056
+      ],
+      "id": "6b1ec588-f8c7-4867-b3b3-f2f250b1a0cf",
+      "name": "Upload"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw",
+          "mode": "list",
+          "cachedResultName": "Horror_Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Topic",
+              "lookupValue": "={{ $json.Topic }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1088,
+        1056
+      ],
+      "id": "161615e7-4ee9-4e41-8352-75d8c644ad3c",
+      "name": "Get row(s) in sheet1",
+      "credentials": {
+        "googleApi": {
+          "id": "xnydnDy6nRXX2Vo9",
+          "name": "VertexAI Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "98c0aefb-718b-4545-a40c-6c0d9915812f",
+              "name": "Title",
+              "value": "={{ $json.Title.trim().replace(/[^\\p{L}\\p{N} ]/gu, '').replace(/ /g, '_') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1296,
+        1056
+      ],
+      "id": "5fc52be4-d719-488f-be40-e15af57bc35e",
+      "name": "Title1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const title = $('Title1').first().json.Title.trim().replace(/\\s+/g, \"_\");\nconst base  = `./video_generation/Horror_Story/${title}`;\nconst files = $json.stdout.split('\\n').map(f => f.trim()).filter(Boolean);\n\nlet inputArgs     = \"\";\nlet filterDeclare = \"\";\nlet filterConcat  = \"\";\nfiles.forEach((f, i) => {\n  inputArgs     += ` -i ${base}/${f}`;\n  filterDeclare += `[${i}:v]setsar=1[v${i}];[${i}:a]anull[a${i}];`;\n  filterConcat  += `[v${i}][a${i}]`;\n});\n\nconst filterComplex = `${filterDeclare}${filterConcat}concat=n=${files.length}:v=1:a=1[outv][outa]`;\n\nreturn [{\n  json: {\n    inputArgs,\n    filterComplex,\n    outputPath: `./video_generation/${title}.mp4`\n  }\n}];\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        1056
+      ],
+      "id": "25d8c303-d7fc-4890-9185-5df3ce1382e3",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "command": "=ffmpeg -y -hide_banner -loglevel error {{ $json.inputArgs }} -filter_complex \"{{ $json.filterComplex }}\" -map \"[outv]\" -map \"[outa]\" -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p -c:a aac -b:a 192k {{ $json.outputPath }}\n\n"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1968,
+        1056
+      ],
+      "id": "a34024a7-3b30-4a0b-a251-225cd99517cb",
+      "name": "Execute Command2"
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Get row(s) in sheet1').item.json.Title }}",
+        "regionCode": "AU",
+        "categoryId": "1",
+        "options": {
+          "description": "={{ $('Get row(s) in sheet1').item.json['Description '] }}"
+        }
+      },
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        2448,
+        1056
+      ],
+      "id": "c0cc13bf-d47f-4053-82b2-c0893613e9b5",
+      "name": "Upload a video",
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "yKjsFVm3UbduXwAj",
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# 恐怖小说长视频工作流\n——————————————————————————\n## 视频地址\nhttps://www.youtube.com/watch?v=WGQi6mVzfYQ\n\n## 图文配置地址\nhttps://jays-ai-lab.super.site/%e6%81%90%e6%80%96%e5%b0%8f%e8%af%b4%e9%95%bf%e8%a7%86%e9%a2%91%e5%b7%a5%e4%bd%9c%e6%b5%81\n\n",
+        "height": 236,
+        "width": 588,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        144,
+        -80
+      ],
+      "typeVersion": 1,
+      "id": "871b73ba-888a-41ac-a855-4b05a895a4da",
+      "name": "Sticky Note5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Local F5-TTS": {
+      "main": [
+        [
+          {
+            "node": "Get audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get audio": {
+      "main": [
+        [
+          {
+            "node": "Audio_URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Story_Outline",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Story_Outline",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Segment_Content",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Story_Title",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Story_Description",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an object": {
+      "main": [
+        [
+          {
+            "node": "Add Captions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio Length": {
+      "main": [
+        [
+          {
+            "node": "Video Length",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input_Topic": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Store_Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store_Topic": {
+      "main": [
+        [
+          {
+            "node": "Story_Outline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story_Outline": {
+      "main": [
+        [
+          {
+            "node": "Split_Outline",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split_Outline": {
+      "main": [
+        [
+          {
+            "node": "Loop_Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop_Content": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Story_Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story_Brief": {
+      "main": [
+        [
+          {
+            "node": "Segment_Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Segment_Brief": {
+      "main": [
+        [
+          {
+            "node": "Segment_Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Segment_Content": {
+      "main": [
+        [
+          {
+            "node": "Clean_Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean_Content": {
+      "main": [
+        [
+          {
+            "node": "CharCount",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CharCount": {
+      "main": [
+        [
+          {
+            "node": "Store_Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store_Content": {
+      "main": [
+        [
+          {
+            "node": "Loop_Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brief": {
+      "main": [
+        [
+          {
+            "node": "Story_Title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story_Title": {
+      "main": [
+        [
+          {
+            "node": "Story_Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story_Description": {
+      "main": [
+        [
+          {
+            "node": "Store_Title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store_Title": {
+      "main": [
+        [
+          {
+            "node": "Title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read_Story": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Merge_Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge_Content": {
+      "main": [
+        [
+          {
+            "node": "Split_by_Sentence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split_by_Sentence": {
+      "main": [
+        [
+          {
+            "node": "Loop_Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop_Video": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Pexels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pexels": {
+      "main": [
+        [
+          {
+            "node": "Local F5-TTS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio_URL": {
+      "main": [
+        [
+          {
+            "node": "Audio Length",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video Length": {
+      "main": [
+        [
+          {
+            "node": "Generate video segments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate video segments": {
+      "main": [
+        [
+          {
+            "node": "Read_Video_Segments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read_Video_Segments": {
+      "main": [
+        [
+          {
+            "node": "Create an object",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store_Video": {
+      "main": [
+        [
+          {
+            "node": "Loop_Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command1": {
+      "main": [
+        [
+          {
+            "node": "Read_Story",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Title": {
+      "main": [
+        [
+          {
+            "node": "Execute Command1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Captions": {
+      "main": [
+        [
+          {
+            "node": "Download a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download a file": {
+      "main": [
+        [
+          {
+            "node": "Store_Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read File Name7": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Upload a video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Title1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Title1": {
+      "main": [
+        [
+          {
+            "node": "Read File Name7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Execute Command2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command2": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a video": {
+      "main": [
+        [
+          {
+            "node": "Update Status A",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "060d5126-4ab0-46ee-8fb0-bfcf7baaf248",
+  "meta": {
+    "instanceId": "be33e7a4c93bf3fbad46ee9dd2261c1867b920251d4e05c1a2fedf55455fa8e4"
+  },
+  "id": "op0jGY7DIFfMa8S0",
+  "tags": []
+}

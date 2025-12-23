@@ -1,0 +1,461 @@
+{
+  "name": "企业知识问答机器人案例",
+  "nodes": [
+    {
+      "parameters": {
+        "chunkSize": 3000,
+        "chunkOverlap": 200,
+        "options": {}
+      },
+      "id": "447b545d-5c47-4d96-a28c-d093fd26a2fa",
+      "name": "Recursive Character Text Splitter",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "position": [
+        -432,
+        960
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "4725f632-213c-4f30-9ee0-927604e144bf",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [
+        -800,
+        768
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "BXFfxvrSGkTuHm73",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {}
+      },
+      "id": "7cbdd2df-c2d2-4cdd-ad5f-32a9a71c048a",
+      "name": "Default Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "position": [
+        -528,
+        752
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "query": "={{ $json.Prompt }}",
+        "options": {}
+      },
+      "id": "1de2c1ea-ba44-42de-9a8e-d48cefbf4166",
+      "name": "Question and Answer Chain",
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "position": [
+        -864,
+        1472
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7f663e48-6d47-4126-97bd-ea9f51412e66",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        -880,
+        1696
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "BXFfxvrSGkTuHm73",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "5b7aa549-fcbf-47af-a48d-4032a68e3988",
+      "name": "Embeddings OpenAI2",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [
+        -656,
+        2112
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "BXFfxvrSGkTuHm73",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "111df099-d5bc-41ea-93cf-09dca239bf7c",
+      "name": "Vector Store Retriever",
+      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+      "position": [
+        -688,
+        1648
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "n8n-index",
+          "mode": "list",
+          "cachedResultName": "n8n-index"
+        },
+        "options": {}
+      },
+      "id": "e1d6295c-fe73-4e85-8577-e3e444fab811",
+      "name": "Read Pinecone Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "position": [
+        -656,
+        1856
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "pineconeApi": {
+          "id": "bp0eRYRIb55Uhs7l",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "n8n-index",
+          "mode": "list",
+          "cachedResultName": "n8n-index"
+        },
+        "options": {}
+      },
+      "id": "6027c5e4-ad46-4e82-8342-c0d315c39e08",
+      "name": "Insert into Pinecone vector store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "position": [
+        -640,
+        528
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "pineconeApi": {
+          "id": "bp0eRYRIb55Uhs7l",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "a6730aa7-aa76-4fe6-bb03-71c281bf2ce0",
+      "name": "When clicking 'Chat' button below",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "position": [
+        -1456,
+        1472
+      ],
+      "webhookId": "44fe0b49-895a-49a6-9df7-067490dc948f",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {},
+      "id": "cfbc04cd-9876-45fc-a520-15e7f0c8ffd3",
+      "name": "When clicking 'Test Workflow' button",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        -1552,
+        736
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/workspace/公司政策/*.pdf",
+        "options": {}
+      },
+      "id": "ae66b5f2-9006-442f-a3ce-5804e00059f1",
+      "name": "Load the schema from the local file",
+      "type": "n8n-nodes-base.readWriteFile",
+      "position": [
+        -1328,
+        736
+      ],
+      "typeVersion": 1,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1104,
+        736
+      ],
+      "id": "047fee5e-18f9-4782-9ce7-4663215c3602",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1d58db3f-8357-41d3-bda2-dff7fb3f8765",
+              "name": "Prompt",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1232,
+        1472
+      ],
+      "id": "61ace787-3594-467f-b04b-4fb90db0f073",
+      "name": "输入-表单"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -896,
+        544
+      ],
+      "id": "544d29e1-e130-453f-8d35-7778b4aeef7e",
+      "name": "Wait",
+      "webhookId": "1f06dd4b-c133-4fbc-b38b-3f78be3bda0c"
+    },
+    {
+      "parameters": {
+        "content": "## 本地知识文档存入向量知识库流程 \n\n循环存储每个文档",
+        "height": 288,
+        "width": 464
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1632,
+        624
+      ],
+      "typeVersion": 1,
+      "id": "7dbc874b-0146-4fc7-b7be-608d36a7021d",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## 检索知识库 \n从知识库中获取问题的答案",
+        "height": 336,
+        "width": 480
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1552,
+        1360
+      ],
+      "typeVersion": 1,
+      "id": "4fe9910a-3cfc-49f0-8755-c9c3ace9e520",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insert into Pinecone vector store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Question and Answer Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Read Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Insert into Pinecone vector store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Store Retriever": {
+      "ai_retriever": [
+        [
+          {
+            "node": "Question and Answer Chain",
+            "type": "ai_retriever",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Pinecone Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Vector Store Retriever",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Chat' button below": {
+      "main": [
+        [
+          {
+            "node": "输入-表单",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load the schema from the local file": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Test Workflow' button": {
+      "main": [
+        [
+          {
+            "node": "Load the schema from the local file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert into Pinecone vector store": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "输入-表单": {
+      "main": [
+        [
+          {
+            "node": "Question and Answer Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Insert into Pinecone vector store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "66d2dc97-679d-4409-91fb-d0aa456f68b9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f7f37a3be20d39c6617faf3611b2c810889e757c2ab36f16f1ef7071c51257a6"
+  },
+  "id": "E4W9tQ3mmOdTC9VX",
+  "tags": [
+    {
+      "createdAt": "2025-08-03T11:11:25.429Z",
+      "updatedAt": "2025-08-03T11:11:25.429Z",
+      "id": "MqcZZXcF5R2MRqZW",
+      "name": "商单"
+    }
+  ]
+}
