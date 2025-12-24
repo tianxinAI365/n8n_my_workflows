@@ -1,0 +1,1548 @@
+{
+  "name": "数字人口播视频",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=生成新闻口播搞",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=从通过关于{{ $json['主题'] }}的新闻内容得到的搜索结果中，选出从{{$now.minus(3,'day').format('yyyy-MM-dd')}}到{{$now.format('yyyy-MM-dd')}}热度最高最新的三篇文章，记录新闻的【新闻时间】，总结成中文80字左右的【口播稿】，\n\n要求：\n1. 第一篇文章第一句话是\"大家好，我是西羊石口播数字人小紫\"；\n2. 语言自然，简单易懂；\n3. 对我们创作者或创业公司有实际性价值，不需要假大空的文章；\n4. 如果【口播稿】中包含有数字需要改成汉字（比如，2025需改成二零二五，3需改成三，等等）；\n5. 给这个口播稿取一个【标题】， 并按【Index】顺序记录。\n \n输出JSON格式：\n{\n    \"Index\": \"Index\",    \n    \"Topic\": \"标题\",\n    \"Transcript\": \"段落\",\n    \"Date\": \"新闻时间\"\n},\n{\n    \"Index\": \"Index\",    \n    \"Topic\": \"标题\",\n    \"Transcript\": \"段落\",\n    \"Date\": \"新闻时间\"\n},\n{\n    \"Index\": \"Index\",    \n    \"Topic\": \"标题\",\n    \"Transcript\": \"段落\",\n    \"Date\": \"新闻时间\"\n},\n{\n    \"Index\": \"Index\",    \n    \"Topic\": \"标题\",\n    \"Transcript\": \"段落\",\n    \"Date\": \"新闻时间\"\n},\n{\n    \"Index\": \"Index\",    \n    \"Topic\": \"标题\",\n    \"Transcript\": \"段落\",\n    \"Date\": \"新闻时间\"\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        720,
+        80
+      ],
+      "id": "5d5a5cf0-b492-4aba-8f10-bd32b88a9006",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/data/files/1/news.xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        240,
+        80
+      ],
+      "id": "d6b25f67-64e5-415c-a029-dd7f37ff4fd1",
+      "name": "主题表"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        400,
+        80
+      ],
+      "id": "ab90f4f2-176a-4fac-a1a3-6caa89df4ca8",
+      "name": "数据转换"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "[{\n    \"Index\": \"Index\",    \n    \"Topic\": \"标题\",\n    \"Transcript\": \"段落\",\n    \"Date\": \"新闻时间\"\n},\n{\n    \"Index\": \"Index\",    \n    \"Topic\": \"标题\",\n    \"Transcript\": \"段落\",\n    \"Date\": \"新闻时间\"\n},\n{\n    \"Index\": \"Index\",    \n    \"Topic\": \"标题\",\n    \"Transcript\": \"段落\",\n    \"Date\": \"新闻时间\"\n},\n{\n    \"Index\": \"Index\",    \n    \"Topic\": \"标题\",\n    \"Transcript\": \"段落\",\n    \"Date\": \"新闻时间\"\n},\n{\n    \"Index\": \"Index\",    \n    \"Topic\": \"标题\",\n    \"Transcript\": \"段落\",\n    \"Date\": \"新闻时间\"\n}]"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        912,
+        320
+      ],
+      "id": "2399e753-a52c-4b23-bb09-c7e1afc77cf0",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        560,
+        80
+      ],
+      "id": "6bf7a28e-efeb-4461-b879-5706ffe82848",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        624,
+        320
+      ],
+      "id": "29e15d27-816e-448a-ac51-fc5613e30285",
+      "name": "DeepSeek"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -224,
+        848
+      ],
+      "id": "9a2e7e7e-8d50-49b1-83f6-1af1701c5424",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:8188/history/{{ $('任务ID').item.json.prompt_id }}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1152,
+        608
+      ],
+      "id": "c351b4bb-2233-4825-9203-84ccd5aae0b6",
+      "name": "查询任务",
+      "alwaysOutputData": false,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        704,
+        608
+      ],
+      "id": "f0aa8d6b-3eb6-4dc1-8996-167a6dc99910",
+      "name": "Wait",
+      "webhookId": "9d10cd5b-47df-4f29-a2b5-9c1c2f5ba222"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "de819fb6-bd6f-4a15-8c74-ed117f45dbff",
+              "leftValue": "={{ $('查询任务').item.json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "ac2c6ff2-93b0-453a-8ef3-7390a4c650b9",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1312,
+        608
+      ],
+      "id": "1c5b6f77-17b8-4dc7-b17a-695f56102a2d",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1248,
+        800
+      ],
+      "id": "68f3ddb4-9bb1-4ca3-bda2-6ecb7210258f",
+      "name": "Wait1",
+      "webhookId": "9d10cd5b-47df-4f29-a2b5-9c1c2f5ba222",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "content": "## 百度新闻搜索和LLM改写口播及整理数据",
+        "height": 480,
+        "width": 1180
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "209f3492-aadd-4044-8cbd-c8c0966169fc",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## ComfyUI-Index-TTS 声音克隆",
+        "height": 500,
+        "width": 1840,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        528
+      ],
+      "id": "d6c7ce72-3d37-469d-aa81-c1acdf871da9",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## ComfyUI数字人Heygem制作",
+        "height": 520,
+        "width": 1860,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        1088
+      ],
+      "id": "a4ddbe30-7125-4772-b1c4-2c26384d0f62",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:8188/view?filename={{ $('查询任务').item.json[$('制作语音').item.json.prompt_id].outputs['4'].audio[0].filename }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1504,
+        592
+      ],
+      "id": "7f61447e-3e4a-4e49-803a-181429848a3e",
+      "name": "下载语音"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Searching for news on the Internet",
+        "method": "POST",
+        "url": "https://qianfan.baidubce.com/v2/ai_search/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer bce-v3/ALTAK-pRbN9rVZ3ivXgCekuhkK5/0275927bf2f5cae56880d75a8aaf3a06cfd52818"
+            },
+            {
+              "name": "HOST",
+              "value": "qianfan.baidubce.com"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"messages\": [\n        {\n            \"content\": \"{{ $json['主题'] }}\",\n            \"role\": \"user\"\n        }\n    ],\n    \"search\": true,\n    \"search_source\": \"baidu_search_v2\",\n   \n    \"time_range\": [\n    {{Date.now() - 7 * 24 * 60 * 60 * 1000}}, \n    {{Date.now()}} \n  ],\n\n    \"enable_corner_markers\": true,\n\"resource_type_filter\": [{\"type\": \"web\",\"top_k\": 15}]\n   \n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        768,
+        368
+      ],
+      "id": "6dac2f96-0bf4-4a1d-a498-1e6397bfa282",
+      "name": "baidu_tools"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        80
+      ],
+      "id": "1dc2f305-bd9b-4965-80c6-a14027b9fc0a",
+      "name": "新闻分组"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/files/1/{{ $('Loop Over Items').item.json.Index }}.flac",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        800
+      ],
+      "id": "ca068871-7325-457e-a7e5-cfffed119453",
+      "name": "保存语音"
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        80,
+        1152
+      ],
+      "id": "407cb8ca-7720-41a3-b687-0bd8b7be1705",
+      "name": "Limit2"
+    },
+    {
+      "parameters": {
+        "amount": 80
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        992,
+        1152
+      ],
+      "id": "5e6cc8f7-edd0-4cfd-8a15-294cad5b1556",
+      "name": "Wait2",
+      "webhookId": "9d10cd5b-47df-4f29-a2b5-9c1c2f5ba222"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "de819fb6-bd6f-4a15-8c74-ed117f45dbff",
+              "leftValue": "={{ $('数字人查询任务').item.json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1472,
+        1152
+      ],
+      "id": "047caf2e-03cb-480d-89e7-7d7e5e573733",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1328,
+        1328
+      ],
+      "id": "190c9eb9-e8fb-44a8-9dd3-25d251191284",
+      "name": "Wait3",
+      "webhookId": "9d10cd5b-47df-4f29-a2b5-9c1c2f5ba222"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "932c4fea-d4de-49d6-b77d-de5c7260e037",
+              "name": "workflow",
+              "value": "={\n  \"1\": {\n    \"inputs\": {\n      \"text\": [\n        \"2\",\n        0\n      ],\n      \"model_version\": \"IndexTTS-1.5\",\n      \"language\": \"auto\",\n      \"speed\": 1,\n      \"seed\": {{ $json.seed }},\n      \"temperature\": 1,\n      \"top_p\": 0.8,\n      \"top_k\": 30,\n      \"repetition_penalty\": 10,\n      \"length_penalty\": 0,\n      \"num_beams\": 3,\n      \"max_mel_tokens\": 600,\n      \"sentence_split\": \"auto\",\n      \"reference_audio\": [\n        \"3\",\n        0\n      ]\n    },\n    \"class_type\": \"IndexTTSNode\",\n    \"_meta\": {\n      \"title\": \"Index TTS\"\n    }\n  },\n  \"2\": {\n    \"inputs\": {\n      \"text\": \"{{ $('Loop Over Items').item.json.Transcript }}\"\n    },\n    \"class_type\": \"LayerUtility: TextBox\",\n    \"_meta\": {\n      \"title\": \"图层工具：文本框\"\n    }\n  },\n  \"3\": {\n    \"inputs\": {\n      \"audio\": \"{{ $('上传克隆声音').item.json.name }}\",\n      \"audioUI\": \"\"\n    },\n    \"class_type\": \"LoadAudio\",\n    \"_meta\": {\n      \"title\": \"加载音频\"\n    }\n  },\n  \"4\": {\n    \"inputs\": {\n      \"filename_prefix\": \"ComfyUI\",\n      \"audioUI\": \"\",\n      \"audio\": [\n        \"1\",\n        0\n      ]\n    },\n    \"class_type\": \"SaveAudio\",\n    \"_meta\": {\n      \"title\": \"保存音频\"\n    }\n  }\n}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        688,
+        800
+      ],
+      "id": "47271eaf-b540-4508-8e4f-79e321cf3a40",
+      "name": "Comfy_TTS工作流"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "932c4fea-d4de-49d6-b77d-de5c7260e037",
+              "name": "workflow",
+              "value": "={\n  \"5\": {\n    \"inputs\": {\n      \"audio\": \"{{ $('上传口播语音').item.json.name }}\",\n      \"audioUI\": \"\"\n    },\n    \"class_type\": \"LoadAudio\",\n    \"_meta\": {\n      \"title\": \"加载音频\"\n    }\n  },\n  \"6\": {\n    \"inputs\": {\n      \"video\": \"{{ $('上传形象视频').item.json.name }}\",\n      \"force_rate\": 30,\n      \"custom_width\": 0,\n      \"custom_height\": 0,\n      \"frame_load_cap\": 0,\n      \"skip_first_frames\": 0,\n      \"select_every_nth\": 1,\n      \"format\": \"AnimateDiff\"\n    },\n    \"class_type\": \"VHS_LoadVideo\",\n    \"_meta\": {\n      \"title\": \"加载视频\"\n    }\n  },\n  \"7\": {\n    \"inputs\": {\n      \"mode\": \"pingpong\",\n      \"stop_heygem\": false,\n      \"fps\": 30,\n      \"audio\": [\n        \"5\",\n        0\n      ],\n      \"video\": [\n        \"9\",\n        0\n      ]\n    },\n    \"class_type\": \"HeyGemRun\",\n    \"_meta\": {\n      \"title\": \"HeyGem AI Avatar\"\n    }\n  },\n  \"8\": {\n    \"inputs\": {\n      \"frame_rate\": 30,\n      \"loop_count\": 0,\n      \"filename_prefix\": \"AnimateDiff\",\n      \"format\": \"video/h264-mp4\",\n      \"pix_fmt\": \"yuv420p\",\n      \"crf\": 19,\n      \"save_metadata\": true,\n      \"trim_to_audio\": false,\n      \"pingpong\": false,\n      \"save_output\": true,\n      \"images\": [\n        \"7\",\n        0\n      ],\n      \"audio\": [\n        \"5\",\n        0\n      ]\n    },\n    \"class_type\": \"VHS_VideoCombine\",\n    \"_meta\": {\n      \"title\": \"合并为视频\"\n    }\n  },\n  \"9\": {\n    \"inputs\": {\n      \"aspect_ratio\": \"original\",\n      \"proportional_width\": 1,\n      \"proportional_height\": 1,\n      \"fit\": \"letterbox\",\n      \"method\": \"lanczos\",\n      \"round_to_multiple\": \"8\",\n      \"scale_to_side\": \"longest\",\n      \"scale_to_length\": 1280,\n      \"background_color\": \"#000000\",\n      \"image\": [\n        \"6\",\n        0\n      ]\n    },\n    \"class_type\": \"LayerUtility: ImageScaleByAspectRatio V2\",\n    \"_meta\": {\n      \"title\": \"按宽高比缩放_V2\"\n    }\n  }\n}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        864,
+        1408
+      ],
+      "id": "ff3b2ff6-b50c-4eab-9a40-91e3299afc98",
+      "name": "Comfy_heygem工作流"
+    },
+    {
+      "parameters": {
+        "content": "## 保存新闻文档",
+        "height": 484,
+        "width": 640,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        0
+      ],
+      "id": "153af87c-ddb0-4a61-bccf-b34e0d454e08",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8188/upload/image",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "=image",
+              "inputDataFieldName": "=data"
+            },
+            {
+              "name": "overwrite",
+              "value": "true"
+            },
+            {
+              "name": "type",
+              "value": "input"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        288,
+        1408
+      ],
+      "id": "933f86ec-80ee-49db-92a0-9cd20f73c328",
+      "name": "上传口播语音"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ $json.fileName }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        48,
+        1408
+      ],
+      "id": "f5ffacda-829e-4247-a0d1-db3c06b3515c",
+      "name": "读取口播语音"
+    },
+    {
+      "parameters": {
+        "fileSelector": "=/data/files/1/xx.mp4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        480,
+        1408
+      ],
+      "id": "aa81bd69-4f73-4bec-8aba-bc7184edc848",
+      "name": "读取形象视频"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8188/upload/image",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "=image",
+              "inputDataFieldName": "=data"
+            },
+            {
+              "name": "overwrite",
+              "value": "true"
+            },
+            {
+              "name": "type",
+              "value": "input"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        672,
+        1408
+      ],
+      "id": "df2c6667-6ff9-443b-8c84-b7881916b156",
+      "name": "上传形象视频"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8188/prompt",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $json.workflow }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        832,
+        1152
+      ],
+      "id": "18a91a81-adbf-4fe3-b001-1a7151e981a8",
+      "name": "制作数字人"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:8188/history/{{ $('任务ID1').item.json.prompt_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1312,
+        1152
+      ],
+      "id": "a105c88d-3abe-43ee-b6f5-98283f539e87",
+      "name": "数字人查询任务",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -208,
+        1392
+      ],
+      "id": "5ff3e162-c3cf-47df-9432-076eb59bb3e1",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8188/prompt",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $json.workflow }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        528,
+        608
+      ],
+      "id": "f806d86c-7ed0-440c-9e6f-2805daeb5250",
+      "name": "制作语音"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d4d74de3-6b67-4fc5-99bc-fda31516599e",
+              "name": "seed",
+              "value": "={{Math.floor(Math.random() * 1000000) + 1 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        512,
+        800
+      ],
+      "id": "fb356f97-a24e-4da2-b07a-156246e4e7bf",
+      "name": "seed"
+    },
+    {
+      "parameters": {
+        "url": "=http:/host.docker.internal:8188/view?filename={{ $('数字人查询任务').item.json[$('制作数字人').item.json.prompt_id].outputs['8'].gifs[0].filename }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1648,
+        1120
+      ],
+      "id": "47dc1c28-e8e1-4d7d-befb-50f807dc9fa4",
+      "name": "下载数字人"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "471991eb-c811-4be9-8803-bd6dfdf269b9",
+              "name": "prompt_id",
+              "value": "={{ $('制作语音').item.json.prompt_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        928,
+        608
+      ],
+      "id": "368b2c18-ae0a-4508-a6e5-95b23b218203",
+      "name": "任务ID"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "471991eb-c811-4be9-8803-bd6dfdf269b9",
+              "name": "prompt_id",
+              "value": "={{ $('制作数字人').item.json.prompt_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1152,
+        1152
+      ],
+      "id": "d7e4fb29-ae97-4675-964a-db5b3bbaf435",
+      "name": "任务ID1"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/data/files/1/{{ $('限制条数').item.json.Index }}.mp4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1664,
+        1344
+      ],
+      "id": "cb9f068b-5568-47f2-b47d-ef5d2eeb4a56",
+      "name": "保存数字人"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "12439f43-4060-404f-8c5d-1c83461a397f",
+              "name": "video",
+              "value": "={{ $json.fileName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        64,
+        1712
+      ],
+      "id": "06607dd1-56c6-4747-9cc3-d4b7c94905be",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "video"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        288,
+        1712
+      ],
+      "id": "2b9e9570-ab36-4ee4-bceb-11b70cc80e9d",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "video",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        1712
+      ],
+      "id": "db722c23-be07-418d-819b-ad2206c78893",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fafe3c05-7aa4-4847-953b-2bdb931da136",
+              "name": "video",
+              "value": "={{ $json.video.map(item => `file '${item}'`).join('\\n') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        512,
+        1712
+      ],
+      "id": "f680c195-6087-4b12-90df-7860b022099c",
+      "name": "Edit Fields6"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "/data/files/1/video.txt",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        960,
+        1712
+      ],
+      "id": "3367982b-8a1e-4048-aab2-c18f4d781e64",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "command": "=ffmpeg -i \"concat:/data/files/1/1.mp4|/data/files/1/2.mp4|/data/files/1/3.mp4\" -c copy /data/files/news.mp4"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        1712
+      ],
+      "id": "7b3ef68c-07ad-4c17-8dc4-9e2fe207fbbf",
+      "name": "Execute Command",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "content": "## 视频剪辑合成与保存\n\n这里执行最后一步太慢了，优化下ffmpeg的步骤",
+        "height": 280,
+        "width": 1868,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        1632
+      ],
+      "id": "8e50e6eb-fac6-424f-b32f-3e4cfbe5aff7",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        80
+      ],
+      "id": "f4cf280c-a1c4-4021-87e3-c3d19bba3535",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "23cd7566-179e-80a6-9143-e150a90a47d2",
+          "mode": "list",
+          "cachedResultName": "新闻IP口播稿",
+          "cachedResultUrl": "https://www.notion.so/23cd7566179e80a69143e150a90a47d2"
+        },
+        "title": "={{$now.format('yyyy-MM-dd')}}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "时间|title",
+              "title": "={{$now.format('yyyy-MM-dd')}}"
+            },
+            {
+              "key": "标题|rich_text",
+              "textContent": "={{ $json.Topic }}"
+            },
+            {
+              "key": "正文|rich_text",
+              "textContent": "={{ $json.Transcript }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1280,
+        80
+      ],
+      "id": "d03fd29e-002f-441c-8044-97253313c1c7",
+      "name": "保存到Notion数据库中"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "237d7566-179e-80a9-abd4-c48668585ae2",
+          "mode": "list",
+          "cachedResultName": "自动化剪辑视频",
+          "cachedResultUrl": "https://www.notion.so/237d7566179e80a9abd4c48668585ae2"
+        },
+        "title": "={{$now.format('yyyy-MM-dd')}}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "=视频链接|url",
+              "ignoreIfEmpty": true,
+              "urlValue": "={{ \"/data/files/news.mp4\" }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1408,
+        1712
+      ],
+      "id": "05b0ce8d-d857-409d-94f0-a74378ef54c0",
+      "name": "保存视频"
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        80,
+        592
+      ],
+      "id": "5d962657-eea6-4b95-8112-e90660406bba",
+      "name": "限制条数"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/data/files/1/axx.mp3",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        144,
+        848
+      ],
+      "id": "46354afa-62cd-423f-8501-f5ffbe55ace5",
+      "name": "读取克隆声音"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8188/upload/image",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "=image",
+              "inputDataFieldName": "=data"
+            },
+            {
+              "name": "overwrite",
+              "value": "true"
+            },
+            {
+              "name": "type",
+              "value": "input"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        320,
+        848
+      ],
+      "id": "875bcf6a-800e-4569-bcc3-7064ad3dce85",
+      "name": "上传克隆声音"
+    },
+    {
+      "parameters": {
+        "content": "🤖 数字人口播视频自动化工作流\n\n📋 基本信息\n\n工作流名称：数字人口播视频自动化工作流\n核心功能：全自动生成数字人口播新闻视频\n主要技术：N8N + DeepSeek + ComfyUI + HeyGen + FFmpeg\n创建者：tianxinAI\n微信：tianxinAI360\n\n\n🎯 功能介绍\n\n这是一个全自动的数字人口播视频生产线。它能自动抓取新闻、生成AI配音、制作数字人形象，最后合成完整的口播视频，实现从内容到成片的完全自动化。\n\n⚡ 主要特点\n\n四阶段流水线：内容创作 → 声音克隆 → 数字人生成 → 视频合成，四大模块清晰分工。\nAI深度集成：结合大模型改写、TTS语音克隆、数字人驱动多项AI技术。\n完全自动化：从定时触发开始，无需人工干预即可产出完整视频。\n高质量输出：使用专业级工具链，确保视频、音频和形象质量。\n🛠️ 核心流程模块\n\n内容创作模块：定时抓取百度新闻 → AI智能改写 → 结构化保存文稿\n声音克隆模块：音频素材处理 → ComfyUI-TTS语音克隆 → 生成个性化配音\n数字人模块：形象素材准备 → HeyGen数字人生成 → 驱动口播动作与表情\n合成发布模块：音视频对齐 → FFmpeg剪辑合成 → 最终视频输出\n🔧 关键技术栈\n\n内容生成：DeepSeek大模型（新闻改写与脚本生成）\n语音合成：ComfyUI-Index-TTS（高质量语音克隆）\n数字人驱动：ComfyUI-HeyGen（形象生成与动作驱动）\n视频处理：FFmpeg（专业音视频剪辑与合成）\n流程编排：N8N（全流程自动化调度）\n💡 应用场景\n\n新闻短视频：自动生成每日新闻摘要口播\n知识科普：将文本内容转化为数字人讲解视频\n企业宣传：制作品牌数字人代言视频\n教育内容：生成虚拟教师教学视频\n🔄 工作流价值\n\n这是一个完整的AIGC视频生产解决方案，将内容创作、形象生成、语音合成、视频制作等多个复杂环节串联成标准化流水线，大幅降低高质量口播视频的制作门槛和时间成本。",
+        "height": 1152,
+        "width": 1056
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1904,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "9d2661a7-2bd4-4c00-a8a8-f6ddfa53d079",
+      "name": "Sticky Note5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "主题表": {
+      "main": [
+        [
+          {
+            "node": "数据转换",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "数据转换": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "新闻分组",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Limit2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "读取克隆声音",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询任务": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "任务ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "下载语音",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "查询任务",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "下载语音": {
+      "main": [
+        [
+          {
+            "node": "保存语音",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "baidu_tools": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "新闻分组": {
+      "main": [
+        [
+          {
+            "node": "限制条数",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "保存到Notion数据库中",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "保存语音": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "任务ID1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "下载数字人",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait3": {
+      "main": [
+        [
+          {
+            "node": "数字人查询任务",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comfy_TTS工作流": {
+      "main": [
+        [
+          {
+            "node": "制作语音",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comfy_heygem工作流": {
+      "main": [
+        [
+          {
+            "node": "制作数字人",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "上传口播语音": {
+      "main": [
+        [
+          {
+            "node": "读取形象视频",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "读取口播语音": {
+      "main": [
+        [
+          {
+            "node": "上传口播语音",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "读取形象视频": {
+      "main": [
+        [
+          {
+            "node": "上传形象视频",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "上传形象视频": {
+      "main": [
+        [
+          {
+            "node": "Comfy_heygem工作流",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "制作数字人": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "数字人查询任务": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "读取口播语音",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "制作语音": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "seed": {
+      "main": [
+        [
+          {
+            "node": "Comfy_TTS工作流",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "下载数字人": {
+      "main": [
+        [
+          {
+            "node": "保存数字人",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "任务ID": {
+      "main": [
+        [
+          {
+            "node": "查询任务",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "任务ID1": {
+      "main": [
+        [
+          {
+            "node": "数字人查询任务",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "保存数字人": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields6": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Execute Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "主题表",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command": {
+      "main": [
+        [
+          {
+            "node": "保存视频",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "限制条数": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "读取克隆声音": {
+      "main": [
+        [
+          {
+            "node": "上传克隆声音",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "上传克隆声音": {
+      "main": [
+        [
+          {
+            "node": "seed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c428882a-b366-417f-ad05-869bda7ee536",
+  "meta": {
+    "instanceId": "a5f08ede13bceab7d066ab11fb03ba9312e3e584a39630194ecaef89c79e9ee1"
+  },
+  "id": "uGgXpeQSdauUx7Jn",
+  "tags": []
+}

@@ -1,0 +1,183 @@
+{
+  "name": "N8N+Nano聊天生图工作流",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        416,
+        400
+      ],
+      "id": "fd3d0f98-595e-40f1-b9dc-1bbaf48407be",
+      "name": "When chat message received",
+      "webhookId": "e1788c40-6723-48ec-bdff-53c12b6f8d7f"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openRouterApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"google/gemini-2.5-flash-image-preview\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"text\",\n          \"text\": {{ JSON.stringify($json.chatInput) }}\n        }\n      ]\n    }\n  ]\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        640,
+        400
+      ],
+      "id": "484a3e51-ff35-453a-af8f-febb4a79559f",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "base",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        400
+      ],
+      "id": "a921c44a-7ce8-4001-a8d6-42342fb8aa0e",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1105fbcd-2732-427a-af96-8102d1d4ef91",
+              "name": "base",
+              "value": "={{ $json.choices[0].message.images[0].image_url.url.split(\",\")[1] }}",
+              "type": "string"
+            },
+            {
+              "id": "0a8c6ab4-a596-4eb5-a681-4a0a52c46863",
+              "name": "mime",
+              "value": "={{ $json.choices[0].message.images[0].image_url.url.match(/^data:([^;]+)/)[1] }}",
+              "type": "string"
+            },
+            {
+              "id": "39873dde-90e0-4868-91f3-cdc1762ec64f",
+              "name": "data",
+              "value": "={{ $json.choices[0].message.images[0].image_url.url}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        848,
+        400
+      ],
+      "id": "ecac1e21-28d1-4740-a70e-a97ecc899794",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "content": "#### 配置 OpenRouter 凭证 👇",
+        "height": 80,
+        "width": 214,
+        "color": 3
+      },
+      "id": "2868e60d-ebab-4a94-a4b4-e1e22e460b61",
+      "name": "Sticky Note12",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        576,
+        352
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "🎨 N8N+Nano聊天生图工作流\n📋 基本信息\n• 工作流名称：Nano-Chat-Image-Generator\n• 版本：v1.0.0\n• 技术栈：N8N + OpenRouter + Nano Banana\n• 创建者：tianxinAI\n• 微信：tianxinAI360\n🎯 功能概述\n基于OpenRouter Nano模型的聊天生图工具，用户在聊天界面输入描述，系统自动调用API生成高质量图片并返回。\n⚙️ 配置说明\n配置OpenRouter凭证：\n○ 注册OpenRouter账号获取API Key\n○ 在凭证管理中添加OpenRouter凭证\n💡 使用提示\n• 支持中英文提示词\n• 生成图片为PNG格式\n• 平均响应时间10-30秒",
+        "height": 336,
+        "width": 1280,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6a452a0f-7617-4d30-b983-5e46b8569c99",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b2739887-22ad-49d0-b477-83f7ff48ab01",
+  "meta": {
+    "instanceId": "a5f08ede13bceab7d066ab11fb03ba9312e3e584a39630194ecaef89c79e9ee1"
+  },
+  "id": "wceFvxgBT80DUGr6",
+  "tags": [
+    {
+      "createdAt": "2025-12-24T03:15:29.885Z",
+      "updatedAt": "2025-12-24T03:15:29.885Z",
+      "id": "NhiSIK0T28SNNoyh",
+      "name": "auto-flow-academy"
+    }
+  ]
+}

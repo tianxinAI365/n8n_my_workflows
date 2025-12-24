@@ -1,0 +1,1820 @@
+{
+  "name": "恐怖小说长视频工作流",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://host.docker.internal:7860/gradio_api/call/basic_tts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": [\n    {\n      \"meta\": { \"_type\": \"gradio.FileData\" },\n      \"path\": \"https://storage.googleapis.com/n8n-nca-bucket/Horror_story_Voice.MP3\"\n    },\n    \"\",\n    \"{{ $('Split_by_Sentence').item.json.segment }}\",\n    false,\n    true,\n    3,\n    0.15,\n    32,\n    1\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2400,
+        1024
+      ],
+      "id": "fefbdbb2-f77c-4ae2-a67c-920b1f7ffa97",
+      "name": "Local F5-TTS"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:7860/gradio_api/call/switch_tts_model/{{ $json.event_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2176,
+        1024
+      ],
+      "id": "b35ec975-fcbd-4dec-913a-d745441f9e11",
+      "name": "Get audio"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "[\n  {\n    \"index\": \"001\",\n    \"subtitle\": \"subtitle\",\n    \"context\": \"context\"\n  }\n]\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -2256,
+        176
+      ],
+      "id": "2a4f65b9-e755-4222-a445-b9747bf6985e",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -2416,
+        176
+      ],
+      "id": "cdd40622-b96b-474d-b573-c7875934cdc0",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1152,
+        192
+      ],
+      "id": "ed59ce79-ff64-4a3d-be66-a1dd64d3e049",
+      "name": "Google Gemini Chat Model1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -2608,
+        576
+      ],
+      "id": "f9ed911f-1b5a-4ab0-a816-9711522481f2",
+      "name": "Google Gemini Chat Model2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -2256,
+        576
+      ],
+      "id": "7072c256-5665-4a45-9180-6da5c1a9ed96",
+      "name": "Google Gemini Chat Model3"
+    },
+    {
+      "parameters": {
+        "resource": "object",
+        "operation": "create",
+        "bucketName": "n8n-nca-bucket-jay",
+        "objectName": "={{ \"T\" + $('Loop_Video').item.json.index + \"_\" + new Date().toLocaleTimeString('en-GB', { hour12: false }).replace(/:/g, '_') }}",
+        "createData": {},
+        "createQuery": {},
+        "encryptionHeaders": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.googleCloudStorage",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        1024
+      ],
+      "id": "36f4bd8c-3924-4112-ac29-01faf90b0a3f",
+      "name": "Create an object"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "=ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {{ $json.data }}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -1728,
+        1024
+      ],
+      "id": "23bb0e68-01bb-4e18-81a0-b34a633d11d8",
+      "name": "Audio Length",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "formTitle": "Horror Story",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Topic",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -2896,
+        -16
+      ],
+      "id": "e853dea8-2902-46c3-8117-fa6a0a2ec698",
+      "name": "Input_Topic",
+      "webhookId": "ffe5669f-7afb-469d-8c09-94e24c67c5cd"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw",
+          "mode": "list",
+          "cachedResultName": "Horror_Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{ $json.Topic }}",
+            "Index": "={{\"=ROW()-1\"}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Index",
+              "displayName": "Index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Description ",
+              "displayName": "Description ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tag",
+              "displayName": "Tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Production",
+              "displayName": "Production",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -2640,
+        -16
+      ],
+      "id": "6f20d260-8b7c-4439-b637-d0e69632278d",
+      "name": "Store_Topic"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Please create an original horror story outline based on the title: {{ $('Input_Topic').item.json.Topic }}.\n\nRequirements:\nThe story must be structured in 7 parts.\nStory Lauguage: \nEnglish\n\nEach part includes:\nA short and suspenseful subtitle\nA creepy or unsettling plot summary (context) for that part\nName the main characters (e.g. the protagonist, antagonist, or supernatural entities).\nThe story should evoke a sense of dread, mystery, and fear, with logical progression.\nUse only Chinese commas and periods as punctuation.\nOutput strictly in the JSON format shown below.\nDo not include any additional explanation or text besides the JSON.\n\nOutput format:\n[\n  {\n    \"index\": \"001\",\n    \"subtitle\": \"subtitle\",\n    \"context\": \"context\"\n  }\n]\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        -2416,
+        -16
+      ],
+      "id": "4969913f-657a-4c17-8062-e4d1ac077233",
+      "name": "Story_Outline"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -2032,
+        -16
+      ],
+      "id": "b53e1c36-5148-45ac-880e-181fc7a53e1b",
+      "name": "Split_Outline"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1808,
+        -16
+      ],
+      "id": "5bd44d11-b81b-436c-b259-02b81c29dda3",
+      "name": "Loop_Content"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a366e5f2-9e48-4808-94ff-5c950220c3a6",
+              "name": "output",
+              "value": "={{$('Story_Outline').item.json.output.map(o => `${o.index} ${o.subtitle} ${o.context}`).join(' ')}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1600,
+        -16
+      ],
+      "id": "6ec62c05-96c6-4819-b48a-b53e67b4f1e3",
+      "name": "Story_Brief"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3fe4d9a9-238e-4fbc-b7c3-2b1b3402accd",
+              "name": "index",
+              "value": "={{ $('Loop_Content').item.json.index }}",
+              "type": "string"
+            },
+            {
+              "id": "b4ca1f4d-de25-44be-87e0-806fd7e923a9",
+              "name": "subtitle",
+              "value": "={{ $('Loop_Content').item.json.subtitle }}",
+              "type": "string"
+            },
+            {
+              "id": "0a8f6111-fbe6-4945-9aea-35e79e08e763",
+              "name": "context",
+              "value": "={{ $('Loop_Content').item.json.context }}",
+              "type": "string"
+            },
+            {
+              "id": "71a795ca-8c09-4938-a5a5-14417caa3f35",
+              "name": "brief",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1376,
+        -16
+      ],
+      "id": "1325d7a5-a6df-4057-b97e-216c2a5b3121",
+      "name": "Segment_Brief"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Expand the horror story plot based on the following story outline, section titles, and section plot summaries. Each section should be approximately 200 words in length, roughly equivalent to 2 minutes of narration.\nDo not include Section title in your response.\nDo not include any other content in your response.\n\nStory Lauguage: \nEnglish\n\nStory outline:\n{{ $json.brief }}\n\nSection titles:\n{{ $json.subtitle }}\n\nSection plot summaries:\n{{ $json.context }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        -1152,
+        -16
+      ],
+      "id": "37f6b566-be98-4439-b50e-ab0fddf5b3fd",
+      "name": "Segment_Content"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7cf7f418-a842-4856-8940-52b9730ab4e1",
+              "name": "data",
+              "value": "={{$json.output.replace(/\\r?\\n/g, '')}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -784,
+        -16
+      ],
+      "id": "7f8ac1f8-6dfe-4750-826f-dcb2c05cf262",
+      "name": "Clean_Content"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e51be39-c452-4328-8c45-badc0203d716",
+              "name": "=CharCount",
+              "value": "={{ ($json['data'] || '').match(/\\b[a-zA-Z]+\\b/g)?.length || 0 }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -560,
+        -16
+      ],
+      "id": "10d3c215-a124-4171-842e-ecc0b19c2a84",
+      "name": "CharCount"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw",
+          "mode": "list",
+          "cachedResultName": "Horror_Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1251439775,
+          "mode": "list",
+          "cachedResultName": "Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit#gid=1251439775"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{ $('Input_Topic').item.json.Topic }}",
+            "Index": "={{ $('Segment_Brief').item.json.index }}",
+            "Subtitle": "={{ $('Segment_Brief').item.json.subtitle }}",
+            "Brief": "={{ $('Segment_Brief').item.json.context }}",
+            "Context": "={{ $('Clean_Content').item.json.data }}",
+            "count": "={{ $json.CharCount }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Index",
+              "displayName": "Index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subtitle",
+              "displayName": "Subtitle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Brief",
+              "displayName": "Brief",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Context",
+              "displayName": "Context",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "count",
+              "displayName": "count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -352,
+        -16
+      ],
+      "id": "37b94ac8-2c22-4db6-901d-920a6fbb666c",
+      "name": "Store_Content"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a366e5f2-9e48-4808-94ff-5c950220c3a6",
+              "name": "output",
+              "value": "={{$('Story_Outline').item.json.output.map(o => `${o.index} ${o.subtitle} ${o.context}`).join(' ')}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2832,
+        384
+      ],
+      "id": "e27b98f0-ec96-4e38-9e4f-691e09029074",
+      "name": "Brief"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Based on the following overall story summary, give this novel an attractive title.\nDo not include any other content in your response.\nDo not use punctuation.\nDo not include '\\n'\nReply with only one title.\n\nNovel story summary:\n{{ $json.output }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        -2608,
+        384
+      ],
+      "id": "1bd2fd93-821e-478f-9323-cd9d6bd1e0fa",
+      "name": "Story_Title"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Based on the following overall story summary, write an engaging story introduction to be used in the video description section.\nDo not include any other content in your response.\nUse only commas and periods as punctuation.\nReply with only the novel introduction.\nDo not insert newline characters.\n\nOverall story summary:\n{{ $('Brief').item.json.output }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        -2256,
+        384
+      ],
+      "id": "dfc1952e-9af8-4a16-842c-f02263a2fb7a",
+      "name": "Story_Description"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw",
+          "mode": "list",
+          "cachedResultName": "Horror_Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{ $('Input_Topic').item.json.Topic }}",
+            "Title": "={{ $('Story_Title').item.json.output }}",
+            "Description ": "={{ $json.output }}",
+            "Tag": "#horror"
+          },
+          "matchingColumns": [
+            "Topic"
+          ],
+          "schema": [
+            {
+              "id": "Index",
+              "displayName": "Index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Description ",
+              "displayName": "Description ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tag",
+              "displayName": "Tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Production",
+              "displayName": "Production",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1808,
+        384
+      ],
+      "id": "4fda633a-0080-4d65-955e-3b3324836e15",
+      "name": "Store_Title"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw",
+          "mode": "list",
+          "cachedResultName": "Horror_Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1251439775,
+          "mode": "list",
+          "cachedResultName": "Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit#gid=1251439775"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Topic",
+              "lookupValue": "={{ $('Input_Topic').item.json.Topic }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -2832,
+        736
+      ],
+      "id": "df935849-ad19-4a67-85eb-f54fb2220722",
+      "name": "Read_Story"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "Index"
+            },
+            {
+              "fieldToAggregate": "Context"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -2608,
+        736
+      ],
+      "id": "f9987700-7635-423d-a06f-dd24b6bd4c69",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "663db983-f217-4dbc-833e-e5615b201562",
+              "name": "Context",
+              "value": "={{ $json.Context.join('') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2400,
+        736
+      ],
+      "id": "4e82e2bb-1685-4d1d-b169-225c304d990b",
+      "name": "Merge_Content"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json.Context;  \n\nconst rawParts = input\n  .split(/(?<=\\.)(?!\")\\s*|\\n{2,}/)\n  .map(p => p.replace(/\\n+/g, ' ').trim())\n  .filter(Boolean);\n\nconst items = [];\nlet buffer = '';\n\nfor (const part of rawParts) {\n  buffer += (buffer ? ' ' : '') + part;\n  const wordCount = buffer.trim().split(/\\s+/).length;\n\n  if (wordCount >= 20) {\n    items.push(buffer.trim());\n    buffer = '';\n  }\n}\nif (buffer.trim()) items.push(buffer.trim());\n\nreturn items.map((segment, i) => ({\n  json: {\n    index: String(i + 1).padStart(4, '0'),\n    segment: segment.replace(/\"/g, '')  \n  }\n}));\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2176,
+        736
+      ],
+      "id": "38793fe6-f544-43ff-ae36-6e707bb75474",
+      "name": "Split_by_Sentence"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2832,
+        1024
+      ],
+      "id": "304fb47b-3dd2-453c-b771-1b61a8fe5911",
+      "name": "Loop_Video"
+    },
+    {
+      "parameters": {
+        "url": "https://api.pexels.com/videos/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.segment }}"
+            },
+            {
+              "name": "per_page",
+              "value": "={{ Math.floor(Math.random() * 10) + 1 }}"
+            },
+            {
+              "name": "orientation",
+              "value": "landscape"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2608,
+        1024
+      ],
+      "id": "0f7b0b26-c88b-4f59-97de-4b2bba559c6e",
+      "name": "Pexels"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7aa5e528-94f3-44e2-b178-197f8d3d9196",
+              "name": "data",
+              "value": "=./video_generation/F5_TTS/{{ (($json.data.match(/\"path\":\\s*\"([^\"]+)\"/) || [])[1] || '').replace('/tmp/gradio/', '').trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1952,
+        1024
+      ],
+      "id": "95534144-50bd-4211-885c-8b6e341da3b3",
+      "name": "Audio_URL"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "=ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {{ $('Pexels').item.json.videos[0].video_files[0].link }}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -1520,
+        1024
+      ],
+      "id": "edf345f9-d8a3-4959-a0c2-d3916e5c2ecd",
+      "name": "Video Length",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "=ffmpeg -y \\\n-stream_loop -1 \\\n-i \"{{ $('Pexels').item.json.videos[0].video_files[0].link }}\" \\\n-i \"{{ $('Audio_URL').item.json.data }}\" \\\n-map 0:v:0 \\\n-map 1:a:0 \\\n-vf \"scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2\" \\\n-c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p \\\n-c:a aac -b:a 192k \\\n-t {{ $('Audio Length').item.json.stdout }} \\\n\"./video_generation/Horror_Story/T{{ $('Loop_Video').item.json.index }}.mp4\""
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -1296,
+        1024
+      ],
+      "id": "fe386796-9c57-4feb-8ded-6a3eb19f176e",
+      "name": "Generate video segments",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "fileSelector": "=./video_generation/Horror_Story/T{{ $('Loop_Video').item.json.index }}.mp4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        -1072,
+        1024
+      ],
+      "id": "06f20bb0-0c65-4a29-aa84-fe9deacf629f",
+      "name": "Read_Video_Segments"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=./video_generation/Horror_Story/{{ $('Title').item.json.Title }}/A{{ $('Loop_Video').item.json.index }}.mp4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        1024
+      ],
+      "id": "f43b0d0f-4018-4669-8f14-45e76affb80a",
+      "name": "Store_Video"
+    },
+    {
+      "parameters": {
+        "command": "=mkdir -p ./video_generation/Horror_Story/\"{{ $json.Title }}\"\n"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -1376,
+        384
+      ],
+      "id": "d2adec46-528d-4b04-9987-3f3b00ce0be7",
+      "name": "Execute Command1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "98c0aefb-718b-4545-a40c-6c0d9915812f",
+              "name": "Title",
+              "value": "={{ $json.Title.trim().replace(/[^\\p{L}\\p{N} ]/gu, '').replace(/ /g, '_') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1600,
+        384
+      ],
+      "id": "b551cdc4-09ec-4e21-a591-1737e556fa59",
+      "name": "Title"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8080/v1/video/caption",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "thekey"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"video_url\": \"https://storage.googleapis.com/{{ $json.bucket }}/{{ $json.name }}\",\n    \"settings\": {\n        \"line_color\": \"#FFFFFF\",\n        \"word_color\": \"#FFFF00\",\n        \"all_caps\": false,\n        \"max_words_per_line\": 3,\n        \"font_size\": 60,\n        \"bold\": false,\n        \"italic\": false,\n        \"underline\": false,\n        \"strikeout\": false,\n        \"outline_width\": 3,\n        \"shadow_offset\": 4,\n        \"style\": \"highlight\",\n        \"font_family\": \"The Bold Font\",\n        \"position\": \"bottom_center\"\n    },\n    \"id\": \"gdrive-five\"\n}",
+        "options": {
+          "timeout": 50000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -624,
+        1024
+      ],
+      "id": "59275b42-3557-4176-b892-60131ff9e448",
+      "name": "Add Captions",
+      "notesInFlow": true,
+      "notes": "/v1/video/caption"
+    },
+    {
+      "parameters": {
+        "bucketName": "nca-toolkit",
+        "fileKey": "={{ $json.response.split(\"/\")[4] }}"
+      },
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        1024
+      ],
+      "id": "aaeb356d-ad1d-40ed-9e06-3584d80f0484",
+      "name": "Download a file"
+    },
+    {
+      "parameters": {
+        "command": "=ls ./video_generation/Horror_Story/{{ $json.Title }}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -2432,
+        1360
+      ],
+      "id": "9cbe5062-904e-4671-96ab-9071520ca4b1",
+      "name": "Read File Name7"
+    },
+    {
+      "parameters": {
+        "fileSelector": "=./video_generation/{{ $('Title1').item.json.Title }}.mp4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        -1728,
+        1360
+      ],
+      "id": "b6a073bc-72b4-4c4a-aa84-3deb075148bb",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw",
+          "mode": "list",
+          "cachedResultName": "Horror_Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 920187057,
+          "mode": "list",
+          "cachedResultName": "Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l6ww-S9XMigEHhyFtmWhl_-_Hf1DoKdkZtdsQggHwhY/edit#gid=920187057"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Production": "Done",
+            "Topic": "={{ $('Input_Topic').item.json.Topic }}"
+          },
+          "matchingColumns": [
+            "Topic"
+          ],
+          "schema": [
+            {
+              "id": "Index",
+              "displayName": "Index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Description ",
+              "displayName": "Description ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Tag",
+              "displayName": "Tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Production",
+              "displayName": "Production",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -1280,
+        1360
+      ],
+      "id": "53ed3b7f-23d7-40e0-a815-66afc989fc0a",
+      "name": "Update Status A"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -3040,
+        1360
+      ],
+      "id": "f3ca417f-8ed4-4d1f-9b2f-7a2faa946aae",
+      "name": "Upload"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw",
+          "mode": "list",
+          "cachedResultName": "Horror_Story",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1rphZskVjj4eZv3fmi9-PMPvnEjGrYxsPORcaoMWhZSw/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Topic",
+              "lookupValue": "={{ $json.Topic }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -2864,
+        1360
+      ],
+      "id": "4f88d475-8eab-44a1-a5dc-15e5372a640e",
+      "name": "Get row(s) in sheet1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "98c0aefb-718b-4545-a40c-6c0d9915812f",
+              "name": "Title",
+              "value": "={{ $json.Title.trim().replace(/[^\\p{L}\\p{N} ]/gu, '').replace(/ /g, '_') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2656,
+        1360
+      ],
+      "id": "f4c5d85d-f00a-4f06-a67f-fa168aeece42",
+      "name": "Title1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const title = $('Title1').first().json.Title.trim().replace(/\\s+/g, \"_\");\nconst base  = `./video_generation/Horror_Story/${title}`;\nconst files = $json.stdout.split('\\n').map(f => f.trim()).filter(Boolean);\n\nlet inputArgs     = \"\";\nlet filterDeclare = \"\";\nlet filterConcat  = \"\";\nfiles.forEach((f, i) => {\n  inputArgs     += ` -i ${base}/${f}`;\n  filterDeclare += `[${i}:v]setsar=1[v${i}];[${i}:a]anull[a${i}];`;\n  filterConcat  += `[v${i}][a${i}]`;\n});\n\nconst filterComplex = `${filterDeclare}${filterConcat}concat=n=${files.length}:v=1:a=1[outv][outa]`;\n\nreturn [{\n  json: {\n    inputArgs,\n    filterComplex,\n    outputPath: `./video_generation/${title}.mp4`\n  }\n}];\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2208,
+        1360
+      ],
+      "id": "cb2c7ace-6726-4b80-a697-22ce3a600151",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "command": "=ffmpeg -y -hide_banner -loglevel error {{ $json.inputArgs }} -filter_complex \"{{ $json.filterComplex }}\" -map \"[outv]\" -map \"[outa]\" -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p -c:a aac -b:a 192k {{ $json.outputPath }}\n\n"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -1984,
+        1360
+      ],
+      "id": "75ee1c15-380c-4c78-a0ef-921fc554f052",
+      "name": "Execute Command2"
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Get row(s) in sheet1').item.json.Title }}",
+        "regionCode": "AU",
+        "categoryId": "1",
+        "options": {
+          "description": "={{ $('Get row(s) in sheet1').item.json['Description '] }}"
+        }
+      },
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        -1504,
+        1360
+      ],
+      "id": "65a5eca1-1116-45a9-946b-63082b61e375",
+      "name": "Upload a video"
+    },
+    {
+      "parameters": {
+        "content": "🤖 恐怖小说长视频自动化工作流\n\n📋 基本信息\n\n工作流名称：恐怖小说长视频自动化工作流\n核心功能：全自动生成恐怖题材的图文/视频故事内容\n主要技术：Google Gemini AI + 本地文件处理 + 视频合成引擎\n创建者：tianxinAI\n微信：tianxinAI360\n🎯 功能介绍\n\n这是一个专门用于批量创作恐怖故事的自动化生产线。从输入一个恐怖主题开始，它能自动生成完整的故事大纲、角色和情节，并最终合成带有字幕和音效的视频内容。\n\n⚡ 主要特点\n\n模块化创作：将故事拆解为大纲、段落、角色、简介、描述等多个维度进行AI生成。\n并行处理：利用多个AI实例同时生成故事的不同部分，大幅提升效率。\n端到端自动化：从文本创作、素材处理到视频合成与发布，全程无需人工干预。\n内容管理：包含完整的故事存储、读取、合并与版本控制流程。\n🛠️ 核心流程模块\n\n故事创作引擎\n\n输入与规划：接收主题 → 存储主题 → 拆分故事大纲。\n并行生成：同时调用多个Google Gemini模型生成：\nStory_Outline：故事核心框架\nSegment_Context：分段落详细情节\nCharacter_Context：角色背景与设定\nStory_Brief：故事摘要\nStory_Description：完整故事描述\n内容整合与处理\n\n文件操作：将生成的内容写入文件 → 合并所有内容 → 同步临时数据。\n故事装配：读取故事文件 → 追加整合内容，形成最终剧本。\n视频生产流水线\n\n素材准备：循环处理视频素材 → 预览 → 本地文件系统操作。\n音视频处理：获取音频 → 处理音频URL → 计算音/视频长度。\n视频合成：生成视频 → 读取视频片段 → 创建合成对象。\n后期制作：添加字幕 → 下载成品文件 → 存储最终视频。\n发布与运维\n\n发布流程：上传文件 → 管理表格记录 → 清理临时文件。\n系统维护：读取文件名 → 执行代码指令 → 读写系统文件 → 更新任务状态。\n🔧 关键技术栈\n\nAI内容生成：Google Gemini Chat Model（负责所有文本创作）\n文件管理：本地文件系统操作（故事存储、素材管理）\n视频合成引擎：自定义视频生成与处理模块\n流程自动化：工作流引擎（协调数十个步骤的顺序与依赖）\n💡 应用场景\n\n恐怖内容频道：为YouTube、抖音等平台批量生产恐怖故事视频。\n互动小说应用：生成带画面的互动式恐怖小说内容。\n游戏剧情生成：为恐怖游戏自动生成背景故事与剧情片段。\n社交媒体运营：定期自动发布高质量的恐怖图文/短视频内容。\n🔄 工作流价值\n\n这套工作流实现了恐怖题材内容创作的工业化和规模化。它将需要高度创造力和大量时间的写作、分镜、合成工作，转化为稳定、可重复的自动化流程，能够以极低的边际成本持续产出风格统一的恐怖内容，是内容创作者和MCN机构的高效生产工具。\n",
+        "height": 1200,
+        "width": 688
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3808,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "3f6796bb-916e-4148-aa0f-47d2b604f908",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Local F5-TTS": {
+      "main": [
+        [
+          {
+            "node": "Get audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get audio": {
+      "main": [
+        [
+          {
+            "node": "Audio_URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Story_Outline",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Story_Outline",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Segment_Content",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Story_Title",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Story_Description",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an object": {
+      "main": [
+        [
+          {
+            "node": "Add Captions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio Length": {
+      "main": [
+        [
+          {
+            "node": "Video Length",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input_Topic": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Store_Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store_Topic": {
+      "main": [
+        [
+          {
+            "node": "Story_Outline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story_Outline": {
+      "main": [
+        [
+          {
+            "node": "Split_Outline",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split_Outline": {
+      "main": [
+        [
+          {
+            "node": "Loop_Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop_Content": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Story_Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story_Brief": {
+      "main": [
+        [
+          {
+            "node": "Segment_Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Segment_Brief": {
+      "main": [
+        [
+          {
+            "node": "Segment_Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Segment_Content": {
+      "main": [
+        [
+          {
+            "node": "Clean_Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean_Content": {
+      "main": [
+        [
+          {
+            "node": "CharCount",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CharCount": {
+      "main": [
+        [
+          {
+            "node": "Store_Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store_Content": {
+      "main": [
+        [
+          {
+            "node": "Loop_Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brief": {
+      "main": [
+        [
+          {
+            "node": "Story_Title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story_Title": {
+      "main": [
+        [
+          {
+            "node": "Story_Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story_Description": {
+      "main": [
+        [
+          {
+            "node": "Store_Title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store_Title": {
+      "main": [
+        [
+          {
+            "node": "Title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read_Story": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Merge_Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge_Content": {
+      "main": [
+        [
+          {
+            "node": "Split_by_Sentence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split_by_Sentence": {
+      "main": [
+        [
+          {
+            "node": "Loop_Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop_Video": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Pexels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pexels": {
+      "main": [
+        [
+          {
+            "node": "Local F5-TTS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio_URL": {
+      "main": [
+        [
+          {
+            "node": "Audio Length",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video Length": {
+      "main": [
+        [
+          {
+            "node": "Generate video segments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate video segments": {
+      "main": [
+        [
+          {
+            "node": "Read_Video_Segments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read_Video_Segments": {
+      "main": [
+        [
+          {
+            "node": "Create an object",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store_Video": {
+      "main": [
+        [
+          {
+            "node": "Loop_Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command1": {
+      "main": [
+        [
+          {
+            "node": "Read_Story",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Title": {
+      "main": [
+        [
+          {
+            "node": "Execute Command1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Captions": {
+      "main": [
+        [
+          {
+            "node": "Download a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download a file": {
+      "main": [
+        [
+          {
+            "node": "Store_Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read File Name7": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Upload a video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Title1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Title1": {
+      "main": [
+        [
+          {
+            "node": "Read File Name7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Execute Command2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command2": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a video": {
+      "main": [
+        [
+          {
+            "node": "Update Status A",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2de0a198-6ab6-49c4-8140-9f39af7687ca",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a5f08ede13bceab7d066ab11fb03ba9312e3e584a39630194ecaef89c79e9ee1"
+  },
+  "id": "t7JiaopB96BsoADb",
+  "tags": []
+}

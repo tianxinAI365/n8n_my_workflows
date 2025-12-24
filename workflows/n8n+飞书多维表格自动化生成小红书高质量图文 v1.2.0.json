@@ -1,0 +1,1616 @@
+{
+  "name": "n8n+飞书多维表格自动化生成小红书高质量图文 v1.3.2",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        1312
+      ],
+      "id": "1d938405-60dc-46d3-84d4-06efdb9a7626",
+      "name": "DeepSeek Chat Model"
+    },
+    {
+      "parameters": {
+        "content": "## 数据接入与准备模块\n**功能**:  负责触发工作流并从飞书多维表格中读取待处理的内容主题\n\n### 技术实现特点:\n- 双触发机制: 支持手动触发和Webhook远程触发，提高灵活性\n- 智能过滤: 自动识别\"待处理\"状态的记录，避免重复处理\n- 批量处理: 使用Split Out节点将多条记录分解为逐条处理\n",
+        "height": 416,
+        "width": 832
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        512
+      ],
+      "id": "3bed9141-fa96-4900-ac1d-cdcf88f95f96",
+      "name": "解析表格URL"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# 角色：资深小红书内容创作者\n\n你是一位精通社交媒体传播、深谙小红书平台调性的内容创作专家。你的笔记总是能精准抓住用户眼球，获得大量点赞、收藏和评论。\n\n# 任务\n\n你的任务是根据用户提供的 **[主题]**，创作一篇完整的、具有爆款潜力的小红书图文笔记。\n\n# 创作要求与规则\n\n1.  **标题**：\n    *   必须引人注目，使用大量 Emoji 吸引眼球。\n    *   多采用“数字 + 关键词”、“提问式”、“揭秘式”或“保姆级教程”等爆款标题格式。\n    *   字数控制在 20 字以内。\n\n2.  **正文**：\n    *   **开篇**：第一句话必须能接住标题的钩子，迅速抓住读者兴趣。\n    *   **Emoji 运用**：全文必须大量、高频地使用 Emoji，用作段落分隔、重点突出和情绪表达，营造轻松活泼的氛围。\n    *   **结构化**：内容必须分点、分段阐述，逻辑清晰。多使用数字序号（❶、❷、❸）或小标题来引导阅读。\n    *   **价值导向**：内容必须对用户有实际帮助，提供干货、技巧、经验或避坑指南。\n    *   **语气**：使用亲切、真实的口吻，多用“姐妹们”、“家人们”、“我真的哭死”等网络热词，像在和好朋友分享秘密。\n    *   **结尾 CTA**：在文末必须有明确的号召性用语（Call to Action），引导用户进行互动，例如：“快@你的闺蜜一起来看”、“记得点赞收藏，不然就找不到了哦”、“评论区交作业”等。\n\n3.  **标签 (Hashtags)**：\n    *   在文末必须附上 5-10 个高度相关的标签。\n    *   标签组合应包括：核心关键词、品类大词、场景词和“#小红书爆款”或“#笔记灵感”等平台热门标签。\n\n# 输出格式\n\n请严格按照以下格式输出，不要有任何多余的解释或说明：\n\n标题：[此处填写你创作的标题]\n\n[此处填写你创作的正文内容，包含所有 Emoji、分段和结尾 CTA]\n\n#[主题关键词1] #[主题关键词2] #[主题关键词3] #小红书 #笔记灵感\n\n---\n\n# 开始创作\n\n现在，请根据以下主题进行创作：\n\n**主题：`{{ $('记录过滤器').item.json.topic }}`**\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        1152
+      ],
+      "id": "e153747d-54e0-4813-8cb2-a3c3763265c1",
+      "name": "AI: 生成小红书文案"
+    },
+    {
+      "parameters": {
+        "content": "## 内容生成模块\n**功能定义**: 利用AI能力生成小红书文案并进行智能分段，为后续封面生成做准备\n\n### 技术实现特点:\n- 双层AI处理: 先生成完整文案，再智能分段优化展示\n- 结构化输出: 使用 JSON Schema 约束输出格式，确保数据一致性\n- DeepSeek集成: 采用高性价比的 DeepSeek 模型降低成本",
+        "height": 480,
+        "width": 1440,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        960
+      ],
+      "id": "d0a5b4bf-9dfd-4455-8de6-1316eb6e3950",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 结果整合模块\n\n**功能定义**: 汇总所有生成的内容和图片，更新飞书表格记录状态\n### 技术实现特点:\n- 数据聚合: 收集所有循环生成的图片token\n- 状态管理: 更新记录为\"已完成\"状态\n- 时间戳记录: 记录生成时间便于追踪",
+        "height": 480,
+        "width": 432,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        608,
+        960
+      ],
+      "id": "992dbdc8-8619-4589-81da-c53d5aadf507",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        96,
+        1312
+      ],
+      "id": "f877e929-704e-47d4-8f93-706974432bf8",
+      "name": "DeepSeek Chat Model2"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"total_pages\": \"数字\",\n  \"pages\": [\n    {\n      \"page_number\": 1,\n      \"page_type\": \"封面页\",\n      \"title\": \"页面标题\",\n      \"content\": \"页面核心内容\",\n      \"word_count\": \"字数统计\"\n    },\n    {\n      \"page_number\": 2,\n      \"page_type\": \"内容页\", \n      \"title\": \"页面标题\",\n      \"content\": \"页面核心内容\",\n      \"word_count\": \"字数统计\"\n    }\n  ],\n  \"content_summary\": {\n    \"original_length\": \"原文字数\",\n    \"segmented_pages\": \"分段页数\", \n    \"main_theme\": \"主要主题\",\n    \"key_points\": [\"核心要点1\", \"核心要点2\", \"核心要点3\"]\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        464,
+        1328
+      ],
+      "id": "05e8534f-1f60-4223-8cfe-c21adee217d5",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.pages",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -832,
+        1664
+      ],
+      "id": "00be3636-7397-4c10-a86c-fbc0ac852de5",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# 小红书内容分段专家\n\n## 角色定位\n专业的小红书内容策划师，擅长将长文案智能分段，精通小红书平台的阅读习惯和内容展示规律。\n\n## 核心任务\n根据用户提供的文案内容，按照小红书多图展示的特点进行合理分段，输出标准JSON格式。\n\n## 输入内容\n**用户原始文案：** {{ $json.output }}\n\n## 核心约束（不可违反）\n- **页数上限**：最多{{ $('Execute Workflow Trigger').item.json.maxPages }}页，绝对不能超过\n- **强制要求**：无论内容多长，必须压缩到{{ $('Execute Workflow Trigger').item.json.maxPages }}页内\n- 如内容过长无法合理分{{ $('Execute Workflow Trigger').item.json.maxPages }}页，则优先保留核心要点\n\n## 分段规则\n\n### 1. 数量控制\n- 总页数控制在{{ $('Execute Workflow Trigger').item.json.minPages }}-{{ $('Execute Workflow Trigger').item.json.maxPages }}页之间（符合小红书图片限制）\n- 优先按内容逻辑自然分段，避免强制切割\n\n### 2. 页面类型规划\n- **封面页**：提炼核心主题，制造吸引力\n- **内容页**：逐点展开，每页一个核心观点\n- **总结页**：重点回顾，引导互动\n\n### 3. 内容密度控制\n- 每页文字控制在15-40字\n- 确保单页信息完整独立\n- 保持页面间逻辑连贯\n\n### 4. 分段优先级\n1. 按自然段落分割\n2. 按要点列表分割  \n3. 按逻辑层次分割\n4. 按字数均匀分割\n\n## 输出JSON结构\n\n```json\n{\n  \"total_pages\": \"必须≤{{ $('Execute Workflow Trigger').item.json.maxPages }}\",\n  \"pages\": [\n    {\n      \"page_number\": 1,\n      \"page_type\": \"封面页\",\n      \"title\": \"页面标题\",\n      \"content\": \"页面核心内容\",\n      \"word_count\": 字数统计\n    },\n    {\n      \"page_number\": 2,\n      \"page_type\": \"内容页\", \n      \"title\": \"页面标题\",\n      \"content\": \"页面核心内容\",\n      \"word_count\": 字数统计\n    }\n  ],\n  \"content_summary\": {\n    \"original_length\": \"原文字数\",\n    \"segmented_pages\": \"分段页数\", \n    \"main_theme\": \"主要主题\",\n    \"key_points\": [\"核心要点1\", \"核心要点2\", \"核心要点3\"]\n  }\n}\n```\n\n## 分段策略\n\n### 封面页处理\n- 提取原文案的核心主题作为主标题\n- 选择最有吸引力的卖点作为副标题\n- 字数控制在20-30字\n\n### 内容页处理  \n- 按逻辑要点逐一展开\n- 每页围绕一个核心观点\n- 保持前后页面的逻辑递进关系\n- 字数控制在15-35字\n\n### 总结页处理\n- 提炼全文核心要点\n- 添加行动指引或互动引导\n- 字数控制在25-40字\n\n## 质量标准\n\n1. **完整性**：分段后覆盖原文案所有重要信息\n2. **独立性**：每页内容相对完整，可独立理解  \n3. **连贯性**：页面间逻辑清晰，过渡自然\n4. **适配性**：符合小红书移动端阅读习惯\n5. **可读性**：文字简洁明了，信息层次清晰\n\n## 输出要求\n- 生成完整可解析的JSON数据结构\n- 确保内容完整性，不遗漏重要信息\n- 保持原文案的核心观点和逻辑结构\n- 严格控制每页字数，适配图片展示需求",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        176,
+        1152
+      ],
+      "id": "b24124fc-f1a1-4768-bf1e-b62747068257",
+      "name": "AI:小红书内容分段专家"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -688,
+        1664
+      ],
+      "id": "21daf652-9367-41f9-99e1-0faa914bd681",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data.binary_data_base64[0]",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        2256
+      ],
+      "id": "84371de8-dd9b-4409-9842-76f87a18262c",
+      "name": "转换图片为文件格式"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# coding:utf-8\n\"\"\"\n基于你提供的Python代码改写的n8n版本\n\"\"\"\n\nimport json\nimport datetime\nimport hashlib\nimport hmac\n\n# 获取输入数据\ninput_data = items[0]['json']\n\n# 配置参数\nmethod = 'POST'\nhost = 'visual.volcengineapi.com'\nregion = input_data.get('region', 'cn-beijing')  # 你说的区域\nwidth = int(input_data.get('width', 512))\nheight = int(input_data.get('height', 683))\naction = input_data.get('action', 'CVSync2AsyncSubmitTask')\nversion= input_data.get('version', '2022-08-31')\nreqKey= input_data.get('reqKey', 'jimeng_t2i_v31')\nendpoint = 'https://visual.volcengineapi.com'\nservice = 'cv'\n\n# 从输入数据获取凭证\naccess_key = input_data.get('accessKeyId', 'your-ak')\nsecret_key = input_data.get('secretAccessKey', 'your-sk')\n\ndef sign(key, msg):\n    return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()\n\ndef getSignatureKey(key, dateStamp, regionName, serviceName):\n    kDate = sign(key.encode('utf-8'), dateStamp)\n    kRegion = sign(kDate, regionName)\n    kService = sign(kRegion, serviceName)\n    kSigning = sign(kService, 'request')\n    return kSigning\n\ndef formatQuery(parameters):\n    request_parameters_init = ''\n    for key in sorted(parameters):\n        request_parameters_init += key + '=' + parameters[key] + '&'\n    request_parameters = request_parameters_init[:-1]\n    return request_parameters\n\ndef signV4Request(access_key, secret_key, service, req_query, req_body):\n    if access_key is None or secret_key is None:\n        return {'error': 'No access key is available.'}\n    \n    t = datetime.datetime.utcnow()\n    current_date = t.strftime('%Y%m%dT%H%M%SZ')\n    datestamp = t.strftime('%Y%m%d')  # Date w/o time, used in credential scope\n    \n    print(f\"=== 基本信息 ===\")\n    print(f\"Current Date: {current_date}\")\n    print(f\"Date Stamp: {datestamp}\")\n    print(f\"Region: {region}\")\n    print(f\"Service: {service}\")\n    print(f\"Method: {method}\")\n    print(f\"Host: {host}\")\n    print(f\"Access Key: {access_key[:10]}...\")  # 只显示前10位\n    print()\n    \n    canonical_uri = '/'\n    canonical_querystring = req_query\n    signed_headers = 'content-type;host;x-content-sha256;x-date'\n    payload_hash = hashlib.sha256(req_body.encode('utf-8')).hexdigest()\n    content_type = 'application/json'\n    \n    print(f\"=== 请求信息 ===\")\n    print(f\"Query String: {canonical_querystring}\")\n    print(f\"Body: {req_body}\")\n    print(f\"Body Bytes Length: {len(req_body.encode('utf-8'))}\")\n    print(f\"Payload Hash: {payload_hash}\")\n    print(f\"Content Type: {content_type}\")\n    print()\n    \n    canonical_headers = 'content-type:' + content_type + '\\n' + 'host:' + host + \\\n                       '\\n' + 'x-content-sha256:' + payload_hash + \\\n                       '\\n' + 'x-date:' + current_date + '\\n'\n    \n    print(f\"=== Canonical Headers ===\")\n    print(f\"Signed Headers: {signed_headers}\")\n    print(\"Canonical Headers:\")\n    print(repr(canonical_headers))\n    print()\n    \n    canonical_request = method + '\\n' + canonical_uri + '\\n' + canonical_querystring + \\\n                       '\\n' + canonical_headers + '\\n' + signed_headers + '\\n' + payload_hash\n    \n    print(\"=== Canonical Request ===\")\n    print(repr(canonical_request))  # 使用 repr 显示转义字符\n    print()\n    print(\"Canonical Request 原文:\")\n    print(canonical_request)\n    print()\n    \n    canonical_request_hash = hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()\n    print(f\"=== Canonical Request Hash ===\")\n    print(canonical_request_hash)\n    print()\n    \n    algorithm = 'HMAC-SHA256'\n    credential_scope = datestamp + '/' + region + '/' + service + '/' + 'request'\n    string_to_sign = algorithm + '\\n' + current_date + '\\n' + credential_scope + '\\n' + canonical_request_hash\n    \n    print(\"=== String to Sign ===\")\n    print(f\"Algorithm: {algorithm}\")\n    print(f\"Current Date: {current_date}\")\n    print(f\"Credential Scope: {credential_scope}\")\n    print(f\"Canonical Request Hash: {canonical_request_hash}\")\n    print()\n    print(\"String to Sign 原文:\")\n    print(repr(string_to_sign))\n    print()\n    print(string_to_sign)\n    print()\n    \n    # 逐步显示签名key生成过程\n    print(\"=== 签名Key生成过程 ===\")\n    kDate = sign(secret_key.encode('utf-8'), datestamp)\n    print(f\"kDate (hex): {kDate.hex()}\")\n    \n    kRegion = sign(kDate, region)\n    print(f\"kRegion (hex): {kRegion.hex()}\")\n    \n    kService = sign(kRegion, service)\n    print(f\"kService (hex): {kService.hex()}\")\n    \n    kSigning = sign(kService, 'request')\n    print(f\"kSigning (hex): {kSigning.hex()}\")\n    print()\n    \n    signature = hmac.new(kSigning, (string_to_sign).encode('utf-8'), hashlib.sha256).hexdigest()\n    \n    print(f\"=== Final Signature ===\")\n    print(f\"Signature Length: {len(signature)}\")\n    print(f\"Signature: {signature}\")\n    print()\n    \n    authorization_header = algorithm + ' ' + 'Credential=' + access_key + '/' + \\\n                          credential_scope + ', ' + 'SignedHeaders=' + \\\n                          signed_headers + ', ' + 'Signature=' + signature\n    \n    print(f\"=== Authorization Header ===\")\n    print(authorization_header)\n    print()\n    \n    headers = {\n        'X-Date': current_date,\n        'Authorization': authorization_header,\n        'X-Content-Sha256': payload_hash,\n        'Content-Type': content_type\n    }\n    \n    request_url = endpoint + '?' + canonical_querystring\n    \n    return {\n        'headers': headers,\n        'url': request_url,\n        'body': req_body,\n        'debug': {\n            'canonical_request': canonical_request,\n            'string_to_sign': string_to_sign,\n            'signature': signature,\n            'authorization': authorization_header,\n            'payload_hash': payload_hash,\n            'current_date': current_date,\n            'credential_scope': credential_scope,\n            'region': region,\n            'service': service,\n            'canonical_request_hash': canonical_request_hash\n        }\n    }\n\n# 请求Query，根据你的需求调整\nquery_params = {\n    'Action': action,  # 你之前用的Action\n    'Version': version,  # 你之前用的Version\n}\nformatted_query = formatQuery(query_params)\n\n# 请求Body，使用你提供的正确参数\nbody_params = {\n    \"height\": height,\n    \"return_url\": False,\n    \"seed\": -1,\n    \"use_pre_llm\": False,\n    \"use_sr\": True,\n    \"width\": width,\n    \"prompt\": input_data.get('prompt', 'your-prompt'),\n    \"req_key\": reqKey\n}\nprint(f\"body_params: {body_params}\")\n# 确保JSON序列化不包含额外空格，与原始代码保持一致\nformatted_body = json.dumps(body_params, separators=(',', ':'), ensure_ascii=False)\n\n# 执行签名\nresult = signV4Request(access_key, secret_key, service, formatted_query, formatted_body)\n\n# 返回结果给 n8n\nreturn [{\"json\": result}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        1680
+      ],
+      "id": "05191fc4-830a-49cd-a921-5c450f72e119",
+      "name": "Code: 格式化请求体"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        752,
+        2256
+      ],
+      "id": "efea66cf-da2e-4789-ba08-2d1ec69a963d",
+      "name": "上传封面图至飞书",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cdd33424-d48c-4bb0-85cf-f3d6b2d36257",
+              "name": "prompt",
+              "value": "={{ ($json.output.prompt) }}",
+              "type": "string"
+            },
+            {
+              "id": "6af00053-b097-42d3-998d-ec5fc3bd8bc1",
+              "name": "accessKeyId",
+              "value": "={{ $('Execute Workflow Trigger').item.json.accessKeyId }}",
+              "type": "string"
+            },
+            {
+              "id": "cd6e2ed4-dd56-403b-8ea2-8d5f663ded74",
+              "name": "secretAccessKey",
+              "value": "={{ $('Execute Workflow Trigger').item.json.secretAccessKey }}",
+              "type": "string"
+            },
+            {
+              "id": "ca99eada-db11-44da-a427-840b9d31effc",
+              "name": "host",
+              "value": "visual.volcengineapi.com",
+              "type": "string"
+            },
+            {
+              "id": "718c0a66-c78d-4947-bf05-9ef1f21cf267",
+              "name": "serviceName",
+              "value": "cv",
+              "type": "string"
+            },
+            {
+              "id": "2a0ad282-9f1f-4b9b-a78c-fb5b84ce7b7c",
+              "name": "region",
+              "value": "cn-beijing",
+              "type": "string"
+            },
+            {
+              "id": "2dcdd6c8-458b-4253-89e7-f59e64900aee",
+              "name": "method",
+              "value": "POST",
+              "type": "string"
+            },
+            {
+              "id": "34311ecd-963c-4395-81a6-5a065d6553f8",
+              "name": "width",
+              "value": 1104,
+              "type": "number"
+            },
+            {
+              "id": "66e1132c-3a9b-4970-a3e5-a159666378c3",
+              "name": "height",
+              "value": 1472,
+              "type": "number"
+            },
+            {
+              "id": "a3dcfda0-50ba-47b5-b490-31be841500eb",
+              "name": "action",
+              "value": "CVSync2AsyncSubmitTask",
+              "type": "string"
+            },
+            {
+              "id": "fba945d6-f6ff-406d-b560-927956f26a39",
+              "name": "version",
+              "value": "2022-08-31",
+              "type": "string"
+            },
+            {
+              "id": "a1dba3d9-b091-4c7c-9edc-ae9c14681180",
+              "name": "reqKey",
+              "value": "jimeng_t2i_v31",
+              "type": "string"
+            },
+            {
+              "id": "7419130a-fd48-431e-ab78-ff84d10d0561",
+              "name": "retryCount",
+              "value": 0,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        1680
+      ],
+      "id": "4639e1ff-855d-4111-bbda-2a74573422c7",
+      "name": "准备图片生成参数"
+    },
+    {
+      "parameters": {
+        "content": "## 封面设计模块\n**功能定义**: 为每个内容页面生成视觉化的封面设计方案\n### 技术实现特点:\n- 循环迭代处理: 使用Loop Over Items实现批量封面生成\n- 智能创意生成: AI分析内容后生成图片设计提示词\n- 结构化提取: 自动提取标题和绘画关键词",
+        "height": 496,
+        "width": 560,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        1472
+      ],
+      "id": "2c72993f-553a-4100-8095-5c169cfd8dcc",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## 图像生成模块\n**功能定义**: 调用火山引擎视觉API，将设计方案转化为实际的封面图片\n### 技术实现特点:\n- 签名认证机制: 使用AWS Signature V4算法进行API认证\n- 高质量生成: 采用即梦文生图3.1模型\n",
+        "height": 496,
+        "width": 576,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        1472
+      ],
+      "id": "7e63b26f-e8c5-445c-a979-ec4ce347e3aa",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        2256
+      ],
+      "id": "bfc48088-8b2c-491b-8750-eb46c17ccc59",
+      "name": "Wait",
+      "webhookId": "4a66cb1f-bb79-43a4-90dd-f7097fabbc73"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        864,
+        1232
+      ],
+      "id": "f355372a-b43e-4d2c-940e-f66cfe8eba75",
+      "name": "回写结果并标记完成",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "content": "## 数据存储模块\n**功能定义**: 将生成的图片上传到飞书，并更新表格记录\n### 技术实现特点:\n- 飞书云存储: 利用飞书的文件存储能力\n- 批量上传: 支持多张图片的连续上传\n- 等待机制: 确保上传完成后继续处理\n",
+        "height": 496,
+        "width": 464,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        576,
+        2048
+      ],
+      "id": "208bfcde-7339-4d8c-b351-81fced6650a8",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        576
+      ],
+      "id": "a1ed37c2-1961-49a9-97bb-6d3c610869dd",
+      "name": "手动触发器"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "f4b78d60-7c4b-4482-a5f5-041027f8ccaf",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1040,
+        768
+      ],
+      "id": "5b5fd3bf-b4da-49e9-b3e8-e62255e06285",
+      "name": "远程触发器",
+      "webhookId": "f4b78d60-7c4b-4482-a5f5-041027f8ccaf"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1820007e-88a9-420e-bdcf-f3a44f1b3bc6",
+              "name": "bitableURL",
+              "value": "https://rvfdqgohv5q.feishu.cn/wiki/Kmsbwsgy8iknIUkIG83cc4Ubnpc?table=tblsWw7Kqzp7jEIi&view=vewKljSG6K",
+              "type": "string"
+            },
+            {
+              "id": "637b8213-f3ff-48fa-8c96-6365d6392c03",
+              "name": "accessKeyId",
+              "value": "={{ $env.VOLCENGINE_ACCESS_KEY_ID }}",
+              "type": "string"
+            },
+            {
+              "id": "442c977e-5e68-4ad5-be43-7458157cb180",
+              "name": "secretAccessKey",
+              "value": "={{ $env.VOLCENGINE_SECRET_ACCESS_KEY }}",
+              "type": "string"
+            },
+            {
+              "id": "f348e16f-5493-4716-a9ed-b1e16d33400a",
+              "name": "minPages",
+              "value": 1,
+              "type": "number"
+            },
+            {
+              "id": "4f6b157a-f2cc-4bee-bc71-311da1725446",
+              "name": "maxPages",
+              "value": 2,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -768,
+        720
+      ],
+      "id": "fc274b25-942f-4890-a6a5-203f7250b5e8",
+      "name": "凭证配置器"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        720
+      ],
+      "id": "54933fef-40f9-4725-af6b-3487e4a076b5",
+      "name": "表格解析器",
+      "credentials": {}
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        720
+      ],
+      "id": "5c2cd7c5-c356-483c-b3fe-27bd0729d8a6",
+      "name": "记录读取器",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data.items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        720
+      ],
+      "id": "b296d468-b5c0-4d2c-b818-115c9d8ba2d2",
+      "name": "记录分发器"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a7db5618-6cec-4474-94bb-a8d8c762ff34",
+              "leftValue": "={{ $json.topic }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -752,
+        1184
+      ],
+      "id": "5094fda9-4cff-4246-b079-06119994732d",
+      "name": "记录过滤器"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        1184
+      ],
+      "id": "3844be85-ec2a-40e8-a356-ea8c129b59f8",
+      "name": "状态锁定器",
+      "alwaysOutputData": false,
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取输入数据\nconst allChunks = $input.all();\nconst content = $('AI: 生成小红书文案').first().json.output;\nconst title = $('AI:小红书内容分段专家').first().json.output.pages[0].title;\n\n// 分别提取成功的图片和错误记录\nconst fileTokens = [];\nconst errorRecords = [];\nallChunks.forEach(item => {\n  if (item.json && item.json.data && item.json.data.file_token) {\n    fileTokens.push({\n      \"file_token\": item.json.data.file_token\n    });\n  } else if (item.json && item.json.error_type) {\n    // 错误记录\n    errorRecords.push({\n      \"error_type\": item.json.error_type,\n      \"page_info\": item.json.page_info,\n      \"failed_prompt\": item.json.failed_prompt,\n      \"error_details\": item.json.error_details\n    });\n  }\n});\n\nconsole.log(\"提取的file_tokens:\", fileTokens);\nconsole.log(\"提取的错误记录:\", errorRecords);\n\n// 计算统计信息\nconst successCount = fileTokens.length;\nconst failureCount = errorRecords.length;\nconst totalPages = successCount + failureCount;\n\nconst finalDataObject= {\n    \"fields\": {\n    \"状态\": \"已完成\",\n    \"小红书标题\": title,\n    \"生成时间\": $now.toMillis(),\n    \"小红书封面\": fileTokens,\n    \"小红书文案\": content,\n    \"备注\": JSON.stringify(errorRecords),\n    \"总页数\": totalPages,\n    \"成功数量\": successCount,\n    \"失败数量\": failureCount\n  }\n}\n\nreturn {\n  finalJsonPayload: JSON.stringify(finalDataObject)\n}"
+      },
+      "id": "50a31a87-4c7f-4a4f-9d9d-ee67ba43911b",
+      "name": "数据聚合器",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://visual.volcengineapi.com",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "Action",
+              "value": "=CVSync2AsyncGetResult"
+            },
+            {
+              "name": "=Version",
+              "value": "={{ $('准备图片生成参数').item.json.version }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $('格式化查询任务参数').item.json.headers.Authorization }}"
+            },
+            {
+              "name": "Host",
+              "value": "visual.volcengineapi.com"
+            },
+            {
+              "name": "X-Content-Sha256",
+              "value": "={{ $('格式化查询任务参数').item.json.headers['X-Content-Sha256'] }}"
+            },
+            {
+              "name": "X-Date",
+              "value": "={{ $('格式化查询任务参数').item.json.headers['X-Date'] }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"req_key\":\"{{ $('准备图片生成参数').item.json.reqKey }}\",\n  \"task_id\": \"{{ $('提交生图任务').item.json.data.task_id }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        2288
+      ],
+      "id": "dccfe952-5373-4cbf-943e-44a206bed6c9",
+      "name": "查询任务",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# coding:utf-8\n\"\"\"\n基于你提供的Python代码改写的n8n版本\n\"\"\"\n\nimport json\nimport datetime\nimport hashlib\nimport hmac\n\n# 获取输入数据\ninput_data = _(\"准备图片生成参数\").first().json\n# 配置参数\nmethod = 'POST'\nhost = 'visual.volcengineapi.com'\nregion = input_data.get('region', 'cn-beijing')  # 你说的区域\naction = input_data.get('action', 'CVSync2AsyncSubmitTask')\nversion= input_data.get('version', '2022-08-31')\nreqKey= input_data.get('reqKey', 'jimeng_t2i_v31')\nendpoint = 'https://visual.volcengineapi.com'\nservice = 'cv'\n\n# 从输入数据获取凭证\naccess_key = input_data.get('accessKeyId', 'your-ak')\nsecret_key = input_data.get('secretAccessKey', 'your-sk')\n\ndef sign(key, msg):\n    return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()\n\ndef getSignatureKey(key, dateStamp, regionName, serviceName):\n    kDate = sign(key.encode('utf-8'), dateStamp)\n    kRegion = sign(kDate, regionName)\n    kService = sign(kRegion, serviceName)\n    kSigning = sign(kService, 'request')\n    return kSigning\n\ndef formatQuery(parameters):\n    request_parameters_init = ''\n    for key in sorted(parameters):\n        request_parameters_init += key + '=' + parameters[key] + '&'\n    request_parameters = request_parameters_init[:-1]\n    return request_parameters\n\ndef signV4Request(access_key, secret_key, service, req_query, req_body):\n    if access_key is None or secret_key is None:\n        return {'error': 'No access key is available.'}\n    \n    t = datetime.datetime.utcnow()\n    current_date = t.strftime('%Y%m%dT%H%M%SZ')\n    datestamp = t.strftime('%Y%m%d')  # Date w/o time, used in credential scope\n    \n    print(f\"=== 基本信息 ===\")\n    print(f\"Current Date: {current_date}\")\n    print(f\"Date Stamp: {datestamp}\")\n    print(f\"Region: {region}\")\n    print(f\"Service: {service}\")\n    print(f\"Method: {method}\")\n    print(f\"Host: {host}\")\n    print(f\"Access Key: {access_key[:10]}...\")  # 只显示前10位\n    print()\n    \n    canonical_uri = '/'\n    canonical_querystring = req_query\n    signed_headers = 'content-type;host;x-content-sha256;x-date'\n    payload_hash = hashlib.sha256(req_body.encode('utf-8')).hexdigest()\n    content_type = 'application/json'\n    \n    print(f\"=== 请求信息 ===\")\n    print(f\"Query String: {canonical_querystring}\")\n    print(f\"Body: {req_body}\")\n    print(f\"Body Bytes Length: {len(req_body.encode('utf-8'))}\")\n    print(f\"Payload Hash: {payload_hash}\")\n    print(f\"Content Type: {content_type}\")\n    print()\n    \n    canonical_headers = 'content-type:' + content_type + '\\n' + 'host:' + host + \\\n                       '\\n' + 'x-content-sha256:' + payload_hash + \\\n                       '\\n' + 'x-date:' + current_date + '\\n'\n    \n    print(f\"=== Canonical Headers ===\")\n    print(f\"Signed Headers: {signed_headers}\")\n    print(\"Canonical Headers:\")\n    print(repr(canonical_headers))\n    print()\n    \n    canonical_request = method + '\\n' + canonical_uri + '\\n' + canonical_querystring + \\\n                       '\\n' + canonical_headers + '\\n' + signed_headers + '\\n' + payload_hash\n    \n    print(\"=== Canonical Request ===\")\n    print(repr(canonical_request))  # 使用 repr 显示转义字符\n    print()\n    print(\"Canonical Request 原文:\")\n    print(canonical_request)\n    print()\n    \n    canonical_request_hash = hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()\n    print(f\"=== Canonical Request Hash ===\")\n    print(canonical_request_hash)\n    print()\n    \n    algorithm = 'HMAC-SHA256'\n    credential_scope = datestamp + '/' + region + '/' + service + '/' + 'request'\n    string_to_sign = algorithm + '\\n' + current_date + '\\n' + credential_scope + '\\n' + canonical_request_hash\n    \n    print(\"=== String to Sign ===\")\n    print(f\"Algorithm: {algorithm}\")\n    print(f\"Current Date: {current_date}\")\n    print(f\"Credential Scope: {credential_scope}\")\n    print(f\"Canonical Request Hash: {canonical_request_hash}\")\n    print()\n    print(\"String to Sign 原文:\")\n    print(repr(string_to_sign))\n    print()\n    print(string_to_sign)\n    print()\n    \n    # 逐步显示签名key生成过程\n    print(\"=== 签名Key生成过程 ===\")\n    kDate = sign(secret_key.encode('utf-8'), datestamp)\n    print(f\"kDate (hex): {kDate.hex()}\")\n    \n    kRegion = sign(kDate, region)\n    print(f\"kRegion (hex): {kRegion.hex()}\")\n    \n    kService = sign(kRegion, service)\n    print(f\"kService (hex): {kService.hex()}\")\n    \n    kSigning = sign(kService, 'request')\n    print(f\"kSigning (hex): {kSigning.hex()}\")\n    print()\n    \n    signature = hmac.new(kSigning, (string_to_sign).encode('utf-8'), hashlib.sha256).hexdigest()\n    \n    print(f\"=== Final Signature ===\")\n    print(f\"Signature Length: {len(signature)}\")\n    print(f\"Signature: {signature}\")\n    print()\n    \n    authorization_header = algorithm + ' ' + 'Credential=' + access_key + '/' + \\\n                          credential_scope + ', ' + 'SignedHeaders=' + \\\n                          signed_headers + ', ' + 'Signature=' + signature\n    \n    print(f\"=== Authorization Header ===\")\n    print(authorization_header)\n    print()\n    \n    headers = {\n        'X-Date': current_date,\n        'Authorization': authorization_header,\n        'X-Content-Sha256': payload_hash,\n        'Content-Type': content_type\n    }\n    \n    request_url = endpoint + '?' + canonical_querystring\n    \n    return {\n        'headers': headers,\n        'url': request_url,\n        'body': req_body,\n        'debug': {\n            'canonical_request': canonical_request,\n            'string_to_sign': string_to_sign,\n            'signature': signature,\n            'authorization': authorization_header,\n            'payload_hash': payload_hash,\n            'current_date': current_date,\n            'credential_scope': credential_scope,\n            'region': region,\n            'service': service,\n            'canonical_request_hash': canonical_request_hash\n        }\n    }\n\n# 请求Query，根据你的需求调整\nquery_params = {\n    'Action': 'CVSync2AsyncGetResult',  # 你之前用的Action\n    'Version': version,  # 你之前用的Version\n}\nformatted_query = formatQuery(query_params)\n\ntask_id = _(\"提交生图任务\").first().json.data.task_id\n# 请求Body，使用你提供的正确参数\nbody_params = {\n    \"req_key\": reqKey,\n    \"task_id\": task_id\n}\n# 确保JSON序列化不包含额外空格，与原始代码保持一致\nformatted_body = json.dumps(body_params, separators=(',', ':'), ensure_ascii=False)\n\n# 执行签名\nresult = signV4Request(access_key, secret_key, service, formatted_query, formatted_body)\n\n# 返回结果给 n8n\nreturn [{\"json\": result}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -784,
+        2288
+      ],
+      "id": "8d546e33-f0c0-48aa-a2bd-8c3678ccd954",
+      "name": "格式化查询任务参数",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://visual.volcengineapi.com",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "Action",
+              "value": "={{ $('准备图片生成参数').item.json.action }}"
+            },
+            {
+              "name": "Version",
+              "value": "={{ $('准备图片生成参数').item.json.version }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $json.headers.Authorization }}"
+            },
+            {
+              "name": "Host",
+              "value": "visual.volcengineapi.com"
+            },
+            {
+              "name": "X-Content-Sha256",
+              "value": "={{ $json.headers['X-Content-Sha256'] }}"
+            },
+            {
+              "name": "X-Date",
+              "value": "={{ $json.headers['X-Date'] }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"height\":{{ $('准备图片生成参数').item.json.height }},\"return_url\":false,\"seed\":-1,\"use_pre_llm\":false,\"use_sr\":true,\"width\":{{ $('准备图片生成参数').item.json.width }},\"prompt\":\"{{ $('准备图片生成参数').item.json.prompt }}\",\"req_key\":\"{{ $('准备图片生成参数').item.json.reqKey }}\"}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 2,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        144,
+        1680
+      ],
+      "id": "4aa27e4f-739b-4749-9dcd-cff2497e17cc",
+      "name": "提交生图任务",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -576,
+        2288
+      ],
+      "id": "ed0665eb-6add-4604-9b29-0363b19c4ea2",
+      "name": "等待生图",
+      "webhookId": "2dc1aab7-305b-48f8-84d3-3ec482f455a6"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "={{ $workflow.id }}",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "app_token": "={{ $('表格解析器').item.json.app_token }}",
+            "table_id": "={{ $('表格解析器').item.json.table_id }}",
+            "record_id": "={{ $('记录分发器').item.json.record_id }}",
+            "topic": "={{ $json.fields['主题'][0].text }}",
+            "minPages": "={{ $('凭证配置器').item.json.minPages }}",
+            "maxPages": "={{ $('凭证配置器').item.json.maxPages }}",
+            "accessKeyId": "={{ $('凭证配置器').item.json.accessKeyId }}",
+            "secretAccessKey": "={{ $('凭证配置器').item.json.secretAccessKey }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "app_token",
+              "displayName": "app_token",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "table_id",
+              "displayName": "table_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "topic",
+              "displayName": "topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "record_id",
+              "displayName": "record_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "minPages",
+              "displayName": "minPages",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "maxPages",
+              "displayName": "maxPages",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "accessKeyId",
+              "displayName": "accessKeyId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "secretAccessKey",
+              "displayName": "secretAccessKey",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        720
+      ],
+      "id": "757eed8d-9661-444a-919e-86800206c393",
+      "name": "Execute Workflow"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "app_token"
+            },
+            {
+              "name": "table_id"
+            },
+            {
+              "name": "topic"
+            },
+            {
+              "name": "record_id"
+            },
+            {
+              "name": "minPages",
+              "type": "number"
+            },
+            {
+              "name": "maxPages",
+              "type": "number"
+            },
+            {
+              "name": "accessKeyId"
+            },
+            {
+              "name": "secretAccessKey"
+            }
+          ]
+        }
+      },
+      "id": "e63ef2ad-f01b-42a1-a7b2-c8bb7ef3c2c6",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -1056,
+        1184
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "error-check-1",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "error-check-2",
+              "leftValue": "={{ $json.error.message }}",
+              "rightValue": "Risk Not",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        2304
+      ],
+      "id": "77ae2f3c-8e76-40e4-b8fd-539536017930",
+      "name": "错误检查"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error-record-1",
+              "name": "error_type",
+              "value": "={{ $json.error.name || 'Unknown Error' }}",
+              "type": "string"
+            },
+            {
+              "id": "error-record-2",
+              "name": "page_info",
+              "value": "={{ {\n  \"page_number\": $('Split Out').item.json.page_number,\n  \"page_title\": $('Split Out').item.json.title\n} }}",
+              "type": "object"
+            },
+            {
+              "id": "error-record-3",
+              "name": "failed_prompt",
+              "value": "={{ $('AI: 小红书图片设计专家').item.json.output.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "error-record-4",
+              "name": "error_details",
+              "value": "={{ {\n  \"error_message\": $json.errorMessage,\n  \"error_description\": $json.errorDescription,\n  \"http_code\": $json.errorDetails?.httpCode,\n  \"raw_error\": $json.errorDetails?.rawErrorMessage?.[0],\n  \"error_time\": $now.toISO(),\n  \"node_name\": $json.n8nDetails?.nodeName\n} }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        64,
+        2288
+      ],
+      "id": "92935726-c886-43b0-a786-2370f2d009d9",
+      "name": "记录错误详情"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ec0664c8-8142-45ac-9fbf-c0fa33cff3dc",
+              "leftValue": "={{ $json.data.status }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        2416
+      ],
+      "id": "1ee51810-8c34-45d5-a3c5-0f3a8921a3c6",
+      "name": "状态检查"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "rate-limit-check-1",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "rate-limit-check-2",
+              "leftValue": "={{ $json.error.message || $json.errorMessage }}",
+              "rightValue": "Try spacing your requests",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        1840
+      ],
+      "id": "3d6ae95d-b389-4576-aa4c-1d7decf2116f",
+      "name": "429错误检测"
+    },
+    {
+      "parameters": {
+        "amount": 8
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        784,
+        1680
+      ],
+      "id": "b1de81fa-7b29-4559-8b7a-bb29aee8774f",
+      "name": "等待重试",
+      "webhookId": "9b6d01a3-13e3-48bd-b254-f8420779a6a0"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "increment-retry",
+              "name": "retryCount",
+              "value": "={{ ($('准备图片生成参数').item.json.retryCount || 0) + 1 }}",
+              "type": "number"
+            },
+            {
+              "id": "keep-prompt",
+              "name": "prompt",
+              "value": "={{ $('准备图片生成参数').item.json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "keep-access-key",
+              "name": "accessKeyId",
+              "value": "={{ $('准备图片生成参数').item.json.accessKeyId }}",
+              "type": "string"
+            },
+            {
+              "id": "keep-secret-key",
+              "name": "secretAccessKey",
+              "value": "={{ $('准备图片生成参数').item.json.secretAccessKey }}",
+              "type": "string"
+            },
+            {
+              "id": "keep-width",
+              "name": "width",
+              "value": "={{ $('准备图片生成参数').item.json.width }}",
+              "type": "number"
+            },
+            {
+              "id": "keep-height",
+              "name": "height",
+              "value": "={{ $('准备图片生成参数').item.json.height }}",
+              "type": "number"
+            },
+            {
+              "id": "keep-action",
+              "name": "action",
+              "value": "={{ $('准备图片生成参数').item.json.action }}",
+              "type": "string"
+            },
+            {
+              "id": "keep-version",
+              "name": "version",
+              "value": "={{ $('准备图片生成参数').item.json.version }}",
+              "type": "string"
+            },
+            {
+              "id": "keep-reqkey",
+              "name": "reqKey",
+              "value": "={{ $('准备图片生成参数').item.json.reqKey }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        912,
+        1824
+      ],
+      "id": "f6adcc5c-d683-44e7-9fe1-ace079281045",
+      "name": "更新重试参数"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "final-error-type",
+              "name": "error_type",
+              "value": "Rate Limit Exceeded - Max Retries",
+              "type": "string"
+            },
+            {
+              "id": "final-error-details",
+              "name": "error_details",
+              "value": "={{ {\n  \"final_error\": $json.error || $json.errorMessage,\n  \"retry_count\": $('准备图片生成参数').item.json.retryCount || 0,\n  \"error_time\": $now.toISO()\n} }}",
+              "type": "object"
+            },
+            {
+              "id": "final-page-info",
+              "name": "page_info",
+              "value": "={{ {\n  \"page_number\": $('Split Out').item.json.page_number,\n  \"page_title\": $('Split Out').item.json.title\n} }}",
+              "type": "object"
+            },
+            {
+              "id": "final-failed-prompt",
+              "name": "failed_prompt",
+              "value": "={{ $('AI: 小红书图片设计专家').item.json.output.prompt }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        704,
+        1792
+      ],
+      "id": "cc171cd3-85a2-4c14-a8dc-099b7094e48e",
+      "name": "记录最终失败"
+    },
+    {
+      "parameters": {
+        "content": "## 429错误检测\n\n **功能定义**: 智能识别API并发限制错误，触发自动重试机制\n\n  ### 检测条件:\n  - **错误存在性**: 检查响应中是否包含error对象\n  - **特征消息**: 识别\"Try spacing your requests\"关键字\n  - **错误类型**: 专门针对429状态码(Too Many Requests)",
+        "height": 496,
+        "width": 688,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        352,
+        1472
+      ],
+      "id": "66819138-17a6-48e0-bb88-23d7b2d39b56",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "## 查询图片生成进度\n  **功能定义**: 定期查询火山引擎图片生成任务的执行状态和结果\n\n  ### 技术实现特点:\n  - **轮询机制**: 通过task_id查询异步任务的执行进度\n  - **状态追踪**: 检查任务是否完成(done状态)\n  - **结果获取**: 成功后获取生成的图片数据\n  - **AWS签名**: 使用相同的V4签名算法确保API认证",
+        "height": 496,
+        "width": 1376
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        2048
+      ],
+      "id": "895fe7ee-aa64-4753-8ebb-507d360560e6",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e6fbe9c4-ecb6-4b6d-a3eb-6827e9c15139",
+              "leftValue": "={{ $('准备图片生成参数').item.json.retryCount || 0 }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        1696
+      ],
+      "id": "06a73113-9237-4145-aaad-d0fca48bd7aa",
+      "name": "重试次数检查"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        1808
+      ],
+      "id": "d8574524-ecd8-4bb0-beb4-5cf2c347cc97",
+      "name": "DeepSeek Chat Model3"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"title\": \"【这里是提取或精炼后的核心标题】\",\n  \"prompt\": \"【这里是组合后的、完整的图像生成提示词】\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -384,
+        1824
+      ],
+      "id": "8191f138-9acd-4031-b552-67246f27880e",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# 角色：小红书视觉策略师\n\n## 核心定位\n你是一位顶尖的视觉策略师，专为小红书平台设计“信息美学”封面。你深知，一张成功的封面是**视觉吸引力**与**核心信息**的无缝融合。你的任务不是单纯创造图片，而是为内容设计一个既好看又能被快速理解的视觉入口。\n\n## 核心任务\n根据用户输入，构思一个**“场景+文字”**的视觉创意，并生成一段可以直接用于AI绘画的、生动具体的提示词。\n\n## 输入分析\n- **页面标题：** `{{ $json.title }}`\n- **页面内容：** `{{ $json.content }}`\n\n## 创作流程：三步构思法\n\n### 第一步：提炼核心文字\n1.  **[核心标题]**: 从用户标题中提炼出1-3个最关键的词，作为画面的主标题。\n2.  **[核心卖点]**: 从用户内容中提炼出不超过15字的核心价值点，作为副标题。\n\n### 第二步：构思融合场景\n基于提炼出的**[核心标题]**，构思一个与之相关的、富有故事感的视觉场景。**关键在于，这个场景要为文字的植入提供一个自然、合理的“舞台”。**\n\n### 第三步：生成融合提示词\n将构思好的**场景**与提炼出的**文字**组合成最终的提示词。\n\n---\n\n## **文字融合技巧 (核心规则)**\n你必须从以下技巧中选择一种，将**[核心标题]**和**[核心卖点]**植入画面：\n\n1.  **【直接标题法 - 优先使用】**\n    *   **描述方式**：在描述画面创意的同时，明确指定主副标题的位置、风格和内容。这是最常用且最高效的方式。\n    *   **应用范例**：`……海报风格，画面上方是醒目的主标题“威海旅游vlog”，下方是副标题“特种兵一日游”……`\n\n2.  **【场景元素法】**\n    *   **描述方式**：将文字作为场景的有机组成部分。\n    *   **应用范例**：`……一个女孩在翻看一本旅游杂志，杂志的封面标题就是“桂林全攻略”……` 或 `……背景是城市夜景，一个巨大的霓虹灯招牌上写着“搞钱思路”……`\n\n3.  **【拼贴标签法】**\n    *   **描述方式**：在拼贴画或信息图风格中，将文字设计成标签、便签或对话框。\n    *   **应用范例**：`……杂志拼贴画风格，一张拍立得照片旁边，有一个黄色的便签条，上面手写着“秋季穿搭公式”……`\n\n---\n\n## **提示词生成原则**\n\n- **信息清晰度是第一原则**：确保**[核心标题]**在画面中清晰、醒目、易于阅读。\n- **视觉与文字的融合**：追求场景与文字在风格、色彩和构图上的和谐统一，让文字看起来是“长”在画面里的，而不是“贴”上去的。\n- **使用感官词汇**：用具体的色彩（马卡龙色、莫兰迪色）、光影（丁达尔效应、过曝）、材质（金属光泽、毛绒质感）来丰富画面。\n- **风格描述限制**：严禁使用任何包含\"小红书\"的描述，改用\"社交媒体海报风格\"、\"时尚杂志封面风格\"、\"拼贴画风格\"等替代表达。\n\n## **黄金范例 (以此为标准)**\n- **输入标题**: `威海旅游vlog`\n- **输入内容**: `特种兵一日游，发现被低估的宝藏城市`\n- **理想输出**: `制作一张vlog视频封面，马卡龙配色，美女旅游照片+色块的拼贴画风格，画面主体是一个穿着短裙、梳双马尾的少女在海边奔跑，人物有白色描边。画面上方是醒目的主标题“威海旅游vlog”，下方是副标题“特种兵一日游，宝藏城市”，整体氛围清新治愈。`\n\n## 输出要求\n1.  **直接输出**：你的回答必须是**一段完整、连贯、无换行**的提示词文本。\n2.  **必须包含文字**：生成的提示词中**必须**包含从输入中提炼出的**[核心标题]**和**[核心卖点]**。\n3.  **无额外内容**：禁止使用Markdown、标题、序号或任何解释性文字。\n4. **中文引号规则**：提示词中包含的明确文字内容，必须用中文引号`“”`包起来，严禁使用英文引号\"\"。例如：正确写法是`“选购秘籍”`，错误写法是`\"选购秘籍\"`。\n5.  **严禁词汇**：生成的提示词中绝对不能出现\"小红书\"三个字，必须使用其他风格描述替代。\n6.  **记住**：你在生成提示词时，不要写\"小红书风格\"，改写为\"社交媒体风格\"或\"时尚海报风格\"。\n",
+        "hasOutputParser": true,
+        "batching": {
+          "batchSize": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -512,
+        1680
+      ],
+      "id": "e430ef65-dc56-4fcd-91cd-a66250f69f85",
+      "name": "AI: 小红书图片设计专家"
+    },
+    {
+      "parameters": {
+        "content": " 飞书多维表格自动化生成小红书图文工作流（并行版）\n📋 基本信息\n\n工作流名称：飞书自动化生成小红书图文（并行主控制器）\n核心功能：批量自动化生成小红书图文内容\n技术架构：并行主控制器 + 子工作流模式\n创建者：tianxinAI\n微信：tianxinAI360\n\n\n🎯 功能概述\n高性能并行处理系统，能够同时处理多条飞书记录，自动生成小红书图文内容，大幅提升批量生产效率。\n⚡ 核心优势\n\n高效并行：多任务同时处理，速度比串行版本快3-5倍\n智能容错：自动处理API频率限制（429错误），无需人工干预\n稳定可靠：内置错误重试机制，确保高并发下的稳定运行\n\n🔄 工作流程\n\n批量分发：同时启动多个子工作流\n并行处理：各子任务独立执行内容生成\n结果汇总：收集所有任务的执行结果\n状态同步：统一更新飞书记录状态\n\n⚠️ 使用提示\n\n遇到频繁429错误时，可适当降低并发数量\n检测到违禁词时，提示词会自动保存到备注中\n支持修改备注后前往即梦官网手动提交处理\n  ",
+        "height": 928,
+        "width": 1040,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "fa096881-295d-4d3f-81fb-7d4ef4ba18a7",
+      "name": "Sticky Note9"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI: 生成小红书文案",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: 生成小红书文案": {
+      "main": [
+        [
+          {
+            "node": "AI:小红书内容分段专家",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI:小红书内容分段专家",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI:小红书内容分段专家",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI:小红书内容分段专家": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "数据聚合器",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI: 小红书图片设计专家",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 格式化请求体": {
+      "main": [
+        [
+          {
+            "node": "提交生图任务",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备图片生成参数": {
+      "main": [
+        [
+          {
+            "node": "Code: 格式化请求体",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "手动触发器": {
+      "main": [
+        [
+          {
+            "node": "凭证配置器",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "远程触发器": {
+      "main": [
+        [
+          {
+            "node": "凭证配置器",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "记录分发器": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "格式化查询任务参数": {
+      "main": [
+        [
+          {
+            "node": "等待生图",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询任务": {
+      "main": [
+        [
+          {
+            "node": "错误检查",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "提交生图任务": {
+      "main": [
+        [
+          {
+            "node": "429错误检测",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "等待生图": {
+      "main": [
+        [
+          {
+            "node": "查询任务",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "记录过滤器",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "错误检查": {
+      "main": [
+        [
+          {
+            "node": "记录错误详情",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "状态检查",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "记录错误详情": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "状态检查": {
+      "main": [
+        [
+          {
+            "node": "转换图片为文件格式",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "格式化查询任务参数",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "429错误检测": {
+      "main": [
+        [
+          {
+            "node": "重试次数检查",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "格式化查询任务参数",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "等待重试": {
+      "main": [
+        [
+          {
+            "node": "更新重试参数",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "记录最终失败": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "更新重试参数": {
+      "main": [
+        [
+          {
+            "node": "Code: 格式化请求体",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "重试次数检查": {
+      "main": [
+        [
+          {
+            "node": "等待重试",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "记录最终失败",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI: 小红书图片设计专家",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI: 小红书图片设计专家",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: 小红书图片设计专家": {
+      "main": [
+        [
+          {
+            "node": "准备图片生成参数",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "644422b4-6bb1-494a-b0a9-45ab921f98d3",
+  "meta": {
+    "instanceId": "a5f08ede13bceab7d066ab11fb03ba9312e3e584a39630194ecaef89c79e9ee1"
+  },
+  "id": "yRrxa49JWyTIxBJ7",
+  "tags": [
+    {
+      "createdAt": "2025-12-24T03:15:29.885Z",
+      "updatedAt": "2025-12-24T03:15:29.885Z",
+      "id": "NhiSIK0T28SNNoyh",
+      "name": "auto-flow-academy"
+    }
+  ]
+}

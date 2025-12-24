@@ -1,0 +1,726 @@
+{
+  "name": "AI 知识卡片生成器 v1.0.0",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "应用前端\n为用户提供交互式网页界面。",
+        "height": 440,
+        "width": 236,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -544,
+        32
+      ],
+      "id": "c47b4268-8761-4b02-b4e0-f767266d4bfb",
+      "name": "Sticky Note Frontend"
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ $json.error }}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        736,
+        160
+      ],
+      "id": "f3595961-6e84-44c5-bf6a-d9e005c9cfa0",
+      "name": "Stop and Error"
+    },
+    {
+      "parameters": {
+        "content": "模块一：输入与提示词生成\n本模块定义了知识卡片的初始参数（关键词、受众群体、风格等），对这些参数进行验证和标准化处理，随后利用语言模型基于这些输入生成详细的图像生成提示词。",
+        "height": 432,
+        "width": 688
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        32
+      ],
+      "id": "975815f7-021c-44b5-82fd-e147ac52642e",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "模块二：图像生成与处理\n本模块接收来自模块一的提示词，并将其发送至图像生成API。该流程包含对API调用的错误处理，以及通过代码节点从API响应中提取生成的图像数据，为下一阶段做好准备。",
+        "height": 432,
+        "width": 496,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        432,
+        32
+      ],
+      "typeVersion": 1,
+      "id": "54c588fa-d5ce-4864-a081-a724f2108387",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "模块三：知识卡片合成\n本模块对模块二生成的每张图片进行迭代处理。针对每张图片，执行以下步骤：\n\n创建背景画布。\n将生成的图片放置到画布上。\n调用视觉模型分析图片并生成文字描述。\n将文字描述添加到卡片上。\n收集最终完成的成套知识卡片。\n",
+        "height": 640,
+        "width": 1456,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -544,
+        528
+      ],
+      "typeVersion": 1,
+      "id": "92cd5921-4941-4ee6-ba0b-96cde4781426",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "#### 配置 Gemini 凭证👇",
+        "height": 80,
+        "width": 182,
+        "color": 3
+      },
+      "id": "bc781f89-433c-4e01-81e4-03183fb4b3a5",
+      "name": "Sticky Note12",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        192,
+        144
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "#### 配置 Gemini Header Auth 👇",
+        "height": 80,
+        "width": 246,
+        "color": 3
+      },
+      "id": "4baab6c6-87f9-41b6-9019-213f7978f83e",
+      "name": "Sticky Note14",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        432,
+        192
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e52d40ef-ea3d-4e33-80f3-1f2b62a452d6",
+              "name": "keywords",
+              "value": "={{ $json.body.keywords }}",
+              "type": "string"
+            },
+            {
+              "id": "e200f4ff-ae8d-4895-8f92-ffc7fe5467fa",
+              "name": "audience",
+              "value": "={{ $json.body.audience }}",
+              "type": "string"
+            },
+            {
+              "id": "63a4f099-0f45-4e11-9dea-459a2bf82a4c",
+              "name": "count",
+              "value": "={{ $json.body.count ?? 3}}",
+              "type": "number"
+            },
+            {
+              "id": "c48c6555-f4be-4a53-a109-5d5e39743299",
+              "name": "style",
+              "value": "={{ $json.body.style }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -112,
+        176
+      ],
+      "id": "bd0fd8e8-ce89-4e00-93c9-ea4acdbd44ce",
+      "name": "提取表单参数"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Mode: Run Once for All Items\nconst item = $input.first();\nconst src = item.json || {};\nconst body = (src && typeof src.body === 'object') ? src.body : null;\n\n// 统一取值：优先 body，其次顶层 json\nconst get = (k, d) => (body?.[k] !== undefined ? body[k] : (src[k] !== undefined ? src[k] : d));\nconst sanitize = (s) => (s == null ? '' : String(s)).trim();\n\n// count 限制 1~6，默认 3\nconst rawCount = get('count', 3);\nconst n = parseInt(rawCount, 10);\nconst count = Math.max(1, Math.min(6, Number.isFinite(n) ? n : 3));\n\n// 供已有节点引用的“规范化字段”（大写命名）\nconst normalized = {\n  Keywords: sanitize(get('keywords', '')),\n  Audience: sanitize(get('audience', '')),\n  'Count of cards': count,\n  Style: sanitize(get('style', 'Doodle-style')),\n};\n\n// 返回：保留原始 json（含 body / 其他字段），补充顶层小写字段 + 规范化字段\nreturn [{\n  json: {\n    ...src,                    // 原始结构全保留\n    // 顶层小写键（方便有的节点用小写取值）\n    keywords: get('keywords', ''),\n    audience: get('audience', ''),\n    count,\n    style: get('style', get('Style', 'Doodle-style')),\n    // 标准字段（与你后续 Message a model / Edit Image 等用法一致）\n    ...normalized,\n  },\n  binary: item.binary,         // 若上游带有二进制，这里不丢\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48,
+        176
+      ],
+      "id": "29b22cf5-3b9c-4fba-9956-069f8f395757",
+      "name": "规范化输入参数"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash-lite-preview-06-17",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash-lite-preview-06-17"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=I want you to help me generate image prompt for teaching and instruction, the image style is {{ $json.Style }},the topic is {{ $json.Keywords }} , the count is {{ $json['Count of cards'] }},the audience is {{ $json.Audience }}.\n\nNote: \n- ouput the prompt directly, do not add any other explanation words.\n- generate prompt must include keyword and images counts\n\n\nFor example:\nGenerate 3 doodle-style images to explain the concept of AIGC to junior students. The images should have a consistent colorful, thick-pencil hand-drawn style, be rich in information, feature English text, use solid color backgrounds, have outlines around the cards, and include uniform titles, similar to a PowerPoint presentation.\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        176,
+        176
+      ],
+      "id": "22cc8b75-e024-498e-b7f3-929366eedb00",
+      "name": "生成生图提示词"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": {{ $json.content.parts[0].text.toJsonString() }}\n        }\n      ]\n    }\n  ]\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        512,
+        224
+      ],
+      "id": "e3c846cf-ee97-4f80-bd34-6157cbf1836d",
+      "name": "调用Gemini生成图片",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 兼容四种常见路径，收集出当前 item 里的所有 data URL\nfunction collectUrls(j) {\n  // 1) 自己构造的数组：images: [{type:'image_url', image_url:{url:'data:...'}}, ...]\n  if (Array.isArray(j.images)) {\n    return j.images.map(x => x?.image_url?.url ?? x?.url).filter(Boolean);\n  }\n  // 2) OpenRouter 风格：choices[0].message.images\n  if (Array.isArray(j.choices?.[0]?.message?.images)) {\n    return j.choices[0].message.images.map(x => x?.image_url?.url ?? x?.url).filter(Boolean);\n  }\n  // 3) content 混合数组：[{type:'text'}, {type:'image_url', image_url:{url:'data:...'}} ...]\n  if (Array.isArray(j.choices?.[0]?.message?.content)) {\n    return j.choices[0].message.content\n      .filter(x => x?.type === 'image_url')\n      .map(x => x?.image_url?.url ?? x?.url)\n      .filter(Boolean);\n  }\n  // 4) Gemini 风格 (input2.json): candidates[0].content.parts\n  if (Array.isArray(j.candidates?.[0]?.content?.parts)) {\n    return j.candidates[0].content.parts\n      .filter(p => p.inlineData && p.inlineData.data)\n      .map(p => `data:${p.inlineData.mimeType};base64,${p.inlineData.data}`)\n      .filter(Boolean);\n  }\n  return [];\n}\n\n\nconst inputItems = $input.all();\nconst out = [];\n\nfor (const [itemIdx, it] of inputItems.entries()) {\n  const urls = collectUrls(it.json);\n\n  for (let i = 0; i < urls.length; i++) {\n    const url = urls[i] || '';\n    const m = url.match(/^data:([^;]+);base64,(.+)$/s);\n    if (!m) {\n      out.push({ json: { itemIdx, index: i, error: 'Not a valid data URL', url } });\n      continue;\n    }\n\n    const mime = m[1];\n    const b64  = m[2];\n    const buf  = Buffer.from(b64, 'base64');\n    const ext  = (mime.split('/')[1] || 'bin').replace(/[^a-z0-9]/gi, '');\n    const fileName = `image_${String(i + 1).padStart(2, '0')}.${ext}`;\n\n    // 关键：要 await！\n    const bin = await this.helpers.prepareBinaryData(buf, fileName, mime);\n\n    out.push({\n      json:   { itemIdx, index: i, mime, fileName },\n      binary: { data: bin }   // 现在 Binary 面板会出现可 View/Download 的卡片\n    });\n  }\n}\n\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        304
+      ],
+      "id": "ac9afa8b-d5a2-4dd8-8dfe-59871b777b11",
+      "name": "从API响应提取图片"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -496,
+        768
+      ],
+      "id": "0a02dca3-828b-4ad9-bc78-13f128783d41",
+      "name": "逐一处理图片"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        864
+      ],
+      "id": "3c812bcb-bfbd-4c5d-ae53-e0fb391dfc67",
+      "name": "图片转为Base64"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"用中文描述这张图片的主要内容，针对{{ $('提取表单参数').item.json.audience }}受众。要求：1）总长度不超过100个字 2）每行不超过50个字，超过请换行 3）使用\\\\n换行符分隔 4）直接输出内容，无需解释\"\n        },\n        {\n          \"inline_data\": {\n            \"mime_type\": \"image/png\",\n            \"data\": \"{{ $json.data }}\"\n          }\n        }\n      ]\n    }\n  ],\n  \"generationConfig\": {\n    \"responseMimeType\": \"application/json\",\n    \"responseSchema\": {\n      \"type\": \"OBJECT\",\n      \"properties\": {\n        \"storyboards\": {\n          \"type\": \"ARRAY\",\n          \"items\": {\n            \"type\": \"OBJECT\",\n            \"properties\": {  \n              \"chineseprompt\": { \"type\": \"STRING\" }  \n            },\n            \"required\": [\"chineseprompt\"],\n            \"propertyOrdering\": [\"chineseprompt\"]\n          }\n        }\n      },\n      \"required\": [\"storyboards\"],\n      \"propertyOrdering\": [\"storyboards\"]\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        48,
+        880
+      ],
+      "id": "bbf8d334-654f-4e70-bae4-00d8d1088440",
+      "name": "生成图片中文描述",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b40e171c-a892-4f47-8429-ccd9b0f8f2f1",
+              "name": "图片提示词",
+              "value": "={{ $json.candidates[0].content.parts[0].text }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        880
+      ],
+      "id": "eeee12d3-150c-41e2-a6d1-8c0c4374eba1",
+      "name": "提取图片描述文本"
+    },
+    {
+      "parameters": {
+        "operation": "multiStep",
+        "dataPropertyName": "bottom",
+        "operations": {
+          "operations": [
+            {
+              "operation": "create",
+              "backgroundColor": "#f5f5f5",
+              "width": 1024,
+              "height": 1366
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        48,
+        720
+      ],
+      "id": "07942527-5aeb-4ce6-bc8e-a6504551194b",
+      "name": "创建卡片背景"
+    },
+    {
+      "parameters": {
+        "operation": "multiStep",
+        "dataPropertyName": "bottom",
+        "operations": {
+          "operations": [
+            {
+              "operation": "composite",
+              "dataPropertyNameComposite": "data",
+              "positionY": "=-{{ $binary[\"data\"].data.height }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        224,
+        720
+      ],
+      "id": "65351ac4-dc31-4c06-bb12-d06dc662d581",
+      "name": "添加描述文字到卡片"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 筛选出包含bottom binary数据的items\nconst bottomImages = $input.all().filter(item => {\n  // 检查是否有bottom这个binary key\n  return item.binary && item.binary.bottom;\n});\n\nconsole.log(\"筛选出的bottom图片数量:\", bottomImages.length);\n\n// 转换为前端期望的JSON格式\nconst jsonResults = [];\n\nfor (let idx = 0; idx < bottomImages.length; idx++) {\n  const item = bottomImages[idx];\n  const binary = item.binary.bottom;\n  \n  // 使用官方方法获取二进制数据，兼容filesystem模式\n  const binaryBuffer = await this.helpers.getBinaryDataBuffer(idx, 'bottom');\n  const base64Data = binaryBuffer.toString('base64');\n  \n  const fileName = binary.fileName || `image_${idx + 1}.png`;\n  \n  jsonResults.push({\n    data_url: `data:${binary.mimeType};base64,${base64Data}`,\n    output_filename: fileName,\n    mime: binary.mimeType,\n    chunks: [base64Data],\n    index: idx,\n    total: bottomImages.length\n  });\n}\n\n// 返回包含final_results的对象，供webhook返回\nreturn [{\n  json: {\n    final_results: jsonResults,\n    total_count: bottomImages.length,\n    status: 'completed'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        560
+      ],
+      "id": "70c4069a-ce17-4d18-a4e7-600444fce523",
+      "name": "收集所有成品卡片"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.final_results }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        400,
+        560
+      ],
+      "id": "892a35c9-818f-4a7d-adb6-851a4168de43",
+      "name": "返回最终JSON结果"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        864
+      ],
+      "id": "75dd93fe-7135-4cd4-9862-30680d48e870",
+      "name": "合并：图片与描述数据流"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "dataPropertyName": "bottom",
+        "text": "={{ $('提取图片描述文本').first().json[\"图片提示词\"].storyboards[0].chineseprompt  }}",
+        "fontSize": 36,
+        "positionX": 20,
+        "positionY": 1104,
+        "lineLength": 25,
+        "options": {
+          "font": "=/usr/share/fonts/chinese/chinese.msyh.ttf"
+        }
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        672,
+        864
+      ],
+      "id": "f062c183-d70e-4a85-9ee5-c77b4f41d5c0",
+      "name": "图像：添加描述文字到卡片"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-cards",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        176
+      ],
+      "id": "dde2c400-2b6c-4012-bf3b-a05e66f6e82f",
+      "name": "触发器：接收生成指令",
+      "webhookId": "f6998a29-b287-4398-93c1-d4d01b73d310"
+    },
+    {
+      "parameters": {
+        "path": "06e4173e-3633-426a-886a-d11eb9750904",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        208
+      ],
+      "id": "098029ab-7097-4587-8d6b-06637e717aee",
+      "name": "触发器：提供UI界面",
+      "webhookId": "06e4173e-3633-426a-886a-d11eb9750904"
+    },
+    {
+      "parameters": {
+        "content": "🎨 AI 知识卡片生成器\n📋 基本信息\n工作流名称： AI 知识卡片生成器\n版本： v1.0.0\n架构模式： Web 应用 + AI 多级处理 + 图像合成  \n技术栈： N8N + Google Gemini  \n创建者： tianxinAI  \n联系方式： 微信 tianxinAI360  \n🎯 功能概述\n这是一个自动化设计与生成知识卡片的工具。用户通过简洁的 Web 界面输入主题、受众和风格后，系统将自动调用 AI 模型，生成一系列图文并茂的精美知识卡片，适用于教学、科普、内容创作等多种场景。\n⚡ 核心特性\n\nWeb 应用交互： 提供直观的在线表单，用户无需技术背景即可轻松使用。\nAI 多级驱动： 全流程由 AI 深度参与，从提示词生成、图像创作到图文匹配，实现端到端的智能生成。\n动态图文合成： 自动创建画布，将 AI 生成的图片与对应的文字描述精准合成为完整的知识卡片。\n批量处理能力： 支持一次性提交并批量生成多张卡片，大幅提升生产效率。\n多模态 AI 应用： 创新性地利用 AI 视觉模型“看图说话”，为已生成的图片自动配文。\n\n🛠️ 支持功能\n\n主题卡片生成： 根据输入的关键词，智能生成一系列相关知识卡片。\n风格与受众定制： 支持自定义图片风格和目标受众，适应不同场景需求。\nAI 看图配文： 对 AI 生成的图片进行二次分析，自动生成匹配的文字描述。\n一键图文合成： 将图片和文字自动渲染为设计精美的卡片。\n在线预览与下载： 在网页上即时预览所有生成的卡片，并支持单张下载。\n\n🔄 交互流程\n\n加载界面： 用户访问指定 URL，打开 Web 操作界面。\n提交需求： 用户在表单中填写主题、目标受众、风格等信息并提交。\nAI 生成提示词： 系统根据用户输入，由 AI 生成高质量的图像生成提示词。\nAI 生成图片： 调用 Gemini API，根据提示词生成图片。\n循环处理： 为每张生成的图片调用 AI 视觉模型生成描述，并将其与图片合成为最终卡片。\n返回结果： 将所有成品卡片返回至 Web 界面，供用户预览和下载。\n\n⚠️ 使用说明\n\nAPI 配置： 需在 N8N 中正确配置 Google Gemini 的 API 凭证。\n字体依赖： 图像合成节点依赖 N8N 运行环境中存在指定的中文字体文件。\n网络延迟： 由于涉及多次 AI 调用和图像处理，生成过程可能需要 30-60 秒。\n输出格式： 最终结果为 PNG 格式的图片文件。",
+        "height": 848,
+        "width": 976,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1536,
+        32
+      ],
+      "id": "aa4a1bc8-988d-4d87-b9df-f74aa40a4aa8",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n<title>AI 知识卡片工作室</title>\n<style>\n  :root{\n    --primary: #6366f1;\n    --primary-dark: #4f46e5;\n    --secondary: #f59e0b;\n    --bg: #0f172a;\n    --panel: #1e293b;\n    --panel-light: #334155;\n    --text: #f8fafc;\n    --text-muted: #94a3b8;\n    --text-accent: #e2e8f0;\n    --border: #334155;\n    --border-light: #475569;\n    --success: #10b981;\n    --font: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n  }\n  \n  * { box-sizing: border-box; }\n  html, body { margin: 0; padding: 0; }\n  \n  body {\n    font-family: var(--font);\n    background: var(--bg);\n    color: var(--text);\n    min-height: 100vh;\n    overflow-x: hidden;\n  }\n  \n  /* 背景动效 */\n  body::before {\n    content: '';\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n    background: \n      radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),\n      radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),\n      radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);\n    z-index: -1;\n    animation: bgShift 20s ease-in-out infinite;\n  }\n  \n  @keyframes bgShift {\n    0%, 100% { opacity: 1; }\n    50% { opacity: 0.8; }\n  }\n  \n  @keyframes fadeInScale {\n    0% { \n      opacity: 0; \n      transform: scale(0.8); \n    }\n    100% { \n      opacity: 1; \n      transform: scale(1); \n    }\n  }\n  \n  .container {\n    max-width: 1200px;\n    margin: 0 auto;\n    padding: 40px 20px;\n    display: grid;\n    grid-template-columns: 1fr 1fr;\n    gap: 40px;\n    min-height: 100vh;\n    align-items: start;\n  }\n  \n  @media (max-width: 1024px) {\n    .container {\n      grid-template-columns: 1fr;\n      gap: 30px;\n    }\n  }\n  \n  /* 左侧表单区域 */\n  .form-panel {\n    background: var(--panel);\n    border: 1px solid var(--border);\n    border-radius: 24px;\n    padding: 32px;\n    backdrop-filter: blur(20px);\n    box-shadow: \n      0 20px 40px rgba(0, 0, 0, 0.4),\n      inset 0 1px 0 rgba(255, 255, 255, 0.1);\n  }\n  \n  .header {\n    text-align: center;\n    margin-bottom: 36px;\n  }\n  \n  .title {\n    font-size: 32px;\n    font-weight: 700;\n    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n    -webkit-background-clip: text;\n    -webkit-text-fill-color: transparent;\n    margin: 0 0 12px;\n    letter-spacing: -0.02em;\n  }\n  \n  .subtitle {\n    font-size: 16px;\n    color: var(--text-muted);\n    margin: 0;\n    line-height: 1.6;\n  }\n  \n  /* 表单样式 */\n  .form-group {\n    margin-bottom: 24px;\n  }\n  \n  .form-row {\n    display: grid;\n    grid-template-columns: 1fr 120px;\n    gap: 16px;\n  }\n  \n  label {\n    display: block;\n    font-weight: 600;\n    margin-bottom: 8px;\n    color: var(--text-accent);\n    font-size: 14px;\n    text-transform: uppercase;\n    letter-spacing: 0.05em;\n  }\n  \n  input, select {\n    width: 100%;\n    padding: 16px 20px;\n    background: var(--panel-light);\n    border: 1px solid var(--border-light);\n    border-radius: 12px;\n    color: var(--text);\n    font-size: 15px;\n    transition: all 0.3s ease;\n  }\n  \n  input:focus, select:focus {\n    outline: none;\n    border-color: var(--primary);\n    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);\n    background: rgba(99, 102, 241, 0.05);\n  }\n  \n  input::placeholder {\n    color: var(--text-muted);\n  }\n  \n  .tip {\n    color: var(--text-muted);\n    font-size: 12px;\n    margin-top: 6px;\n    line-height: 1.4;\n  }\n  \n  /* 样式选择器 */\n  .style-selector {\n    display: grid;\n    grid-template-columns: repeat(2, 1fr);\n    gap: 12px;\n    margin-top: 8px;\n    max-height: 180px;\n    overflow-y: auto;\n    padding-right: 4px;\n  }\n  \n  /* 样式选择器滚动条美化 */\n  .style-selector::-webkit-scrollbar {\n    width: 6px;\n  }\n  \n  .style-selector::-webkit-scrollbar-track {\n    background: var(--panel-light);\n    border-radius: 3px;\n  }\n  \n  .style-selector::-webkit-scrollbar-thumb {\n    background: var(--border-light);\n    border-radius: 3px;\n  }\n  \n  .style-selector::-webkit-scrollbar-thumb:hover {\n    background: var(--primary);\n  }\n  \n  .style-option {\n    padding: 16px;\n    background: var(--panel-light);\n    border: 2px solid var(--border-light);\n    border-radius: 12px;\n    cursor: pointer;\n    text-align: center;\n    transition: all 0.3s ease;\n    position: relative;\n    overflow: hidden;\n  }\n  \n  .style-option::before {\n    content: '';\n    position: absolute;\n    top: 0;\n    left: -100%;\n    width: 100%;\n    height: 100%;\n    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);\n    transition: left 0.5s ease;\n  }\n  \n  .style-option:hover::before {\n    left: 100%;\n  }\n  \n  .style-option:hover {\n    border-color: var(--primary);\n    transform: translateY(-2px);\n    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);\n  }\n  \n  .style-option.selected {\n    border-color: var(--primary);\n    background: rgba(99, 102, 241, 0.1);\n  }\n  \n  .style-title {\n    font-weight: 600;\n    margin-bottom: 4px;\n  }\n  \n  .style-desc {\n    font-size: 12px;\n    color: var(--text-muted);\n  }\n  \n  /* 生成按钮 */\n  .generate-btn {\n    width: 100%;\n    padding: 18px 24px;\n    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);\n    border: none;\n    border-radius: 16px;\n    color: white;\n    font-weight: 700;\n    font-size: 16px;\n    cursor: pointer;\n    transition: all 0.3s ease;\n    position: relative;\n    overflow: hidden;\n    margin-top: 8px;\n  }\n  \n  .generate-btn::before {\n    content: '';\n    position: absolute;\n    top: 0;\n    left: -100%;\n    width: 100%;\n    height: 100%;\n    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);\n    transition: left 0.6s ease;\n  }\n  \n  .generate-btn:hover::before {\n    left: 100%;\n  }\n  \n  .generate-btn:hover {\n    transform: translateY(-2px);\n    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.4);\n  }\n  \n  .generate-btn:active {\n    transform: translateY(0);\n  }\n  \n  /* 右侧预览区域 */\n  .preview-panel {\n    background: var(--panel);\n    border: 1px solid var(--border);\n    border-radius: 24px;\n    padding: 32px;\n    backdrop-filter: blur(20px);\n    min-height: 500px;\n    display: flex;\n    flex-direction: column;\n  }\n  \n  .preview-header {\n    text-align: center;\n    margin-bottom: 24px;\n  }\n  \n  .preview-title {\n    font-size: 20px;\n    font-weight: 600;\n    margin: 0 0 8px;\n    color: var(--text-accent);\n  }\n  \n  .preview-subtitle {\n    color: var(--text-muted);\n    font-size: 14px;\n    margin: 0;\n  }\n  \n  .preview-content {\n    flex: 1;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    flex-direction: column;\n  }\n  \n  .preview-placeholder {\n    width: 200px;\n    height: 280px;\n    background: var(--panel-light);\n    border: 2px dashed var(--border-light);\n    border-radius: 16px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    flex-direction: column;\n    transition: all 0.3s ease;\n  }\n  \n  .preview-placeholder:hover {\n    border-color: var(--primary);\n    background: rgba(99, 102, 241, 0.05);\n  }\n  \n  .preview-icon {\n    font-size: 48px;\n    margin-bottom: 16px;\n    opacity: 0.5;\n  }\n  \n  .preview-text {\n    color: var(--text-muted);\n    text-align: center;\n    font-size: 14px;\n    line-height: 1.4;\n  }\n  \n  /* 状态和结果区域 */\n  .hidden { display: none !important; }\n  \n  /* 顶部固定进度条 */\n  .top-progress {\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 4px;\n    background: var(--bg);\n    z-index: 1000;\n    transition: opacity 0.3s ease;\n  }\n  \n  .top-progress-fill {\n    height: 100%;\n    background: linear-gradient(90deg, var(--primary), var(--secondary));\n    width: 0%;\n    transition: width 0.5s ease;\n  }\n  \n  /* 浮动状态提示 */\n  .floating-status {\n    position: fixed;\n    top: 20px;\n    left: 50%;\n    transform: translateX(-50%);\n    background: var(--panel);\n    border: 1px solid var(--border-light);\n    border-radius: 12px;\n    padding: 12px 24px;\n    font-size: 14px;\n    font-weight: 600;\n    color: var(--text);\n    backdrop-filter: blur(20px);\n    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);\n    z-index: 999;\n    animation: slideDown 0.3s ease-out;\n  }\n  \n  @keyframes slideDown {\n    from {\n      opacity: 0;\n      transform: translateX(-50%) translateY(-10px);\n    }\n    to {\n      opacity: 1;\n      transform: translateX(-50%) translateY(0);\n    }\n  }\n  \n  .status {\n    text-align: center;\n    padding: 24px;\n    background: var(--panel);\n    border-radius: 16px;\n    margin-top: 24px;\n  }\n  \n  .status-text {\n    font-size: 16px;\n    font-weight: 600;\n    margin-bottom: 16px;\n  }\n  \n  .progress-bar {\n    width: 100%;\n    height: 8px;\n    background: var(--panel-light);\n    border-radius: 4px;\n    overflow: hidden;\n    margin-bottom: 16px;\n  }\n  \n  .progress-fill {\n    height: 100%;\n    background: linear-gradient(90deg, var(--primary), var(--secondary));\n    width: 0%;\n    transition: width 0.5s ease;\n    border-radius: 4px;\n  }\n  \n  .success-message {\n    color: var(--success);\n    font-weight: 700;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n  }\n  \n  /* 结果网格 */\n  .result-panel {\n    margin-top: 24px;\n  }\n  \n  .result-header {\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    margin-bottom: 24px;\n  }\n  \n  .result-title {\n    font-size: 20px;\n    font-weight: 600;\n    color: var(--text-accent);\n  }\n  \n  .regenerate-btn {\n    padding: 12px 20px;\n    background: var(--panel-light);\n    border: 1px solid var(--border-light);\n    border-radius: 12px;\n    color: var(--text);\n    font-weight: 600;\n    cursor: pointer;\n    transition: all 0.3s ease;\n  }\n  \n  .regenerate-btn:hover {\n    background: var(--border-light);\n    transform: translateY(-1px);\n  }\n  \n  .cards-grid {\n    display: grid;\n    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));\n    gap: 24px;\n  }\n  \n  .card {\n    background: var(--panel-light);\n    border: 1px solid var(--border-light);\n    border-radius: 16px;\n    overflow: hidden;\n    transition: all 0.3s ease;\n  }\n  \n  .card:hover {\n    transform: translateY(-4px);\n    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);\n    border-color: var(--primary);\n  }\n  \n  .card-image {\n    position: relative;\n    background: var(--panel);\n  }\n  \n  .card-image::after {\n    content: '';\n    position: absolute;\n    inset: 0;\n    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);\n    pointer-events: none;\n  }\n  \n  .card img {\n    width: 100%;\n    display: block;\n  }\n  \n  .card-meta {\n    padding: 16px;\n  }\n  \n  .card-desc {\n    color: var(--text-muted);\n    font-size: 14px;\n    line-height: 1.5;\n    margin-bottom: 8px;\n  }\n  \n  .card-filename {\n    color: var(--text-muted);\n    font-size: 12px;\n    font-family: 'Monaco', 'Menlo', monospace;\n  }\n</style>\n</head>\n<body>\n  <div class=\"container\">\n    <!-- 左侧表单面板 -->\n    <div class=\"form-panel\">\n      <div class=\"header\">\n        <h1 class=\"title\">AI 知识卡片工作室</h1>\n        <p class=\"subtitle\">让复杂概念变成美丽的视觉故事</p>\n      </div>\n      \n      <form id=\"f\">\n        <div class=\"form-group\">\n          <label>主题关键词 *</label>\n          <input id=\"kw\" placeholder=\"AIGC\" required />\n          <div class=\"tip\">用于设置卡片主题与标题；也会用于图片上的文字。</div>\n        </div>\n        \n        <div class=\"form-row\">\n          <div class=\"form-group\">\n            <label>目标受众 *</label>\n            <select id=\"aud\" required>\n              <option value=\"\">请选择目标受众</option>\n              <option value=\"Elementary School Students\">🎒 小学生</option>\n              <option value=\"High School Students\">📚 中学生</option>\n              <option value=\"College Students\">🎓 大学生</option>\n              <option value=\"Working Professionals\">💼 职场人士</option>\n              <option value=\"Subject Matter Experts\">🎯 领域专家</option>\n            </select>\n          </div>\n          <div class=\"form-group\">\n            <label>卡片数量</label>\n            <input id=\"cnt\" type=\"number\" min=\"1\" max=\"6\" value=\"3\" />\n          </div>\n        </div>\n        \n        <div class=\"form-group\">\n          <label>视觉风格 *</label>\n          <div class=\"style-selector\">\n            <div class=\"style-option selected\" data-style=\"Doodle-style\">\n              <div class=\"style-title\">🎨 涂鸦风格</div>\n              <div class=\"style-desc\">手绘感，活泼可爱</div>\n            </div>\n            <div class=\"style-option\" data-style=\"Mind maps\">\n              <div class=\"style-title\">🧠 思维导图</div>\n              <div class=\"style-desc\">逻辑清晰，结构化</div>\n            </div>\n            <div class=\"style-option\" data-style=\"Minimal infographics\">\n              <div class=\"style-title\">📊 简约图表</div>\n              <div class=\"style-desc\">现代简洁，专业感</div>\n            </div>\n            <div class=\"style-option\" data-style=\"Hand-drawn colorful\">\n              <div class=\"style-title\">🌈 彩色手绘</div>\n              <div class=\"style-desc\">色彩丰富，温暖亲切</div>\n            </div>\n            <div class=\"style-option\" data-style=\"Cartoon Style\">\n              <div class=\"style-title\">🦄 卡通风格</div>\n              <div class=\"style-desc\">童趣可爱，生动有趣</div>\n            </div>\n            <div class=\"style-option\" data-style=\"Bold Flat Illustration Style\">\n              <div class=\"style-title\">🎯 扁平插画</div>\n              <div class=\"style-desc\">简洁明快，现代时尚</div>\n            </div>\n            <div class=\"style-option\" data-style=\"Fantasy Style\">\n              <div class=\"style-title\">🌟 奇幻风格</div>\n              <div class=\"style-desc\">神秘梦幻，富有想象</div>\n            </div>\n            <div class=\"style-option\" data-style=\"Watercolor Style\">\n              <div class=\"style-title\">🎨 水彩风格</div>\n              <div class=\"style-desc\">柔美淡雅，艺术感强</div>\n            </div>\n            <div class=\"style-option\" data-style=\"Cut-Paper and Collage Style\">\n              <div class=\"style-title\">✂️ 剪纸拼贴</div>\n              <div class=\"style-desc\">立体层次，创意独特</div>\n            </div>\n            <div class=\"style-option\" data-style=\"Realistic Style\">\n              <div class=\"style-title\">📷 写实风格</div>\n              <div class=\"style-desc\">真实细腻，专业感强</div>\n            </div>\n            <div class=\"style-option\" data-style=\"Line Drawing Style\">\n              <div class=\"style-title\">✏️ 线条绘画</div>\n              <div class=\"style-desc\">简约优雅，线条美感</div>\n            </div>\n          </div>\n          <input id=\"sty\" type=\"hidden\" value=\"Doodle-style\" required />\n        </div>\n        \n        <button id=\"go\" type=\"submit\" class=\"generate-btn\">\n          ✨ 开始创作\n        </button>\n      </form>\n    </div>\n    \n    <!-- 右侧预览面板 -->\n    <div class=\"preview-panel\">\n      <div class=\"preview-header\">\n        <h2 class=\"preview-title\">实时预览</h2>\n        <p class=\"preview-subtitle\">您的知识卡片将在这里呈现</p>\n      </div>\n      \n      <div class=\"preview-content\">\n        <div class=\"preview-placeholder\">\n          <div class=\"preview-icon\">🎴</div>\n          <div class=\"preview-text\">\n            填写左侧表单<br>\n            开始创作您的专属知识卡片\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n  \n  <!-- 状态显示 -->\n  <div id=\"status\" class=\"status hidden\">\n    <div id=\"stxt\" class=\"status-text\">正在发送请求...</div>\n    <div class=\"progress-bar\">\n      <div id=\"fill\" class=\"progress-fill\"></div>\n    </div>\n    <div id=\"done\" class=\"success-message hidden\">\n      <span>🎉</span>\n      <span>生成成功！</span>\n    </div>\n  </div>\n  \n  <!-- 结果展示 -->\n  <div id=\"result\" class=\"result-panel hidden\">\n    <div class=\"result-header\">\n      <h2 class=\"result-title\">您的知识卡片</h2>\n      <button id=\"reset\" class=\"regenerate-btn\">重新生成</button>\n    </div>\n    <div class=\"cards-grid\" id=\"grid\"></div>\n  </div>\n\n<script>\n// 保持原有的后端交互逻辑不变\nconst POST_URL = '/webhook/generate-cards';\n\nconst $ = (id) => document.getElementById(id);\nconst f = $('f'), st = $('status'), txt = $('stxt'), fill = $('fill'), done = $('done'),\n      res = $('result'), grid = $('grid'), btnReset = $('reset'),\n      kw = $('kw'), aud = $('aud'), cnt = $('cnt'), sty = $('sty');\n\n// 样式选择器交互\ndocument.querySelectorAll('.style-option').forEach(option => {\n  option.addEventListener('click', () => {\n    document.querySelectorAll('.style-option').forEach(opt => opt.classList.remove('selected'));\n    option.classList.add('selected');\n    sty.value = option.dataset.style;\n  });\n});\n\nfunction showStatus(s, p) { \n  st.classList.remove('hidden'); \n  txt.textContent = s; \n  fill.style.width = p; \n}\n\nfunction hideForm() { \n  f.classList.add('hidden'); \n}\n\nfunction safeName(name, fallback = 'image.png') {\n  const n = (name || '').toString().trim();\n  return (n ? n : fallback).replace(/[^A-Za-z0-9._-]/g, '_');\n}\n\n// 兼容两种返回：直接 data_url 或 {mime, chunks[]}\nfunction buildDataURL(item) {\n  if (item.data_url) return item.data_url;\n  if (item.mime && Array.isArray(item.chunks)) {\n    const b64 = item.chunks.join('');\n    return `data:${item.mime};base64,${b64}`;\n  }\n  return null;\n}\n\n// 全局变量存储生成的图片\nlet generatedImages = [];\n\n// 智能网格布局配置（1-6张图片）\nfunction getGridLayout(count) {\n  const layouts = {\n    1: { columns: '1fr', rows: 'auto', maxWidth: '280px' },\n    2: { columns: 'repeat(2, 1fr)', rows: 'auto', maxWidth: '100%' },\n    3: { columns: 'repeat(2, 1fr)', rows: 'auto auto', maxWidth: '100%' }, // 2+1布局\n    4: { columns: 'repeat(2, 1fr)', rows: 'repeat(2, auto)', maxWidth: '100%' },\n    5: { columns: 'repeat(2, 1fr)', rows: 'auto auto auto', maxWidth: '100%' }, // 2+2+1布局\n    6: { columns: 'repeat(2, 1fr)', rows: 'repeat(3, auto)', maxWidth: '100%' }\n  };\n  return layouts[Math.min(count, 6)] || layouts[6];\n}\n\n// 在预览区显示图片（右侧）\nfunction updatePreview(images) {\n  const previewContent = document.querySelector('.preview-content');\n  previewContent.innerHTML = '';\n  \n  if (images.length === 0) {\n    previewContent.innerHTML = `\n      <div class=\"preview-placeholder\">\n        <div class=\"preview-icon\">🎴</div>\n        <div class=\"preview-text\">\n          填写左侧表单<br>\n          开始创作您的专属知识卡片\n        </div>\n      </div>\n    `;\n    return;\n  }\n  \n  const count = images.length;\n  const layout = getGridLayout(count);\n  \n  // 创建智能网格容器\n  const imageGrid = document.createElement('div');\n  imageGrid.style.cssText = `\n    display: grid;\n    grid-template-columns: ${layout.columns};\n    grid-template-rows: ${layout.rows};\n    gap: 12px;\n    width: 100%;\n    max-width: ${layout.maxWidth};\n    margin: 0 auto;\n    max-height: 500px;\n    overflow-y: auto;\n    align-content: start;\n  `;\n  \n  images.forEach((it, idx) => {\n    const dataUrl = buildDataURL(it);\n    if (!dataUrl) return;\n    const fname = safeName(it.output_filename || `image_${idx + 1}.png`);\n    \n    const imageContainer = document.createElement('div');\n    imageContainer.style.cssText = `\n      background: var(--panel-light);\n      border: 1px solid var(--border-light);\n      border-radius: 12px;\n      overflow: hidden;\n      transition: all 0.3s ease;\n      animation: fadeInScale 0.5s ease-out;\n      aspect-ratio: 3/4;\n      position: relative;\n    `;\n    \n    // 特殊布局处理\n    if (count === 3 && idx === 2) {\n      // 第3张图片跨两列居中\n      imageContainer.style.gridColumn = '1 / -1';\n      imageContainer.style.maxWidth = '280px';\n      imageContainer.style.margin = '0 auto';\n    } else if (count === 5 && idx === 4) {\n      // 第5张图片跨两列居中\n      imageContainer.style.gridColumn = '1 / -1';\n      imageContainer.style.maxWidth = '280px';\n      imageContainer.style.margin = '0 auto';\n    }\n    \n    imageContainer.innerHTML = `\n      <img src=\"${dataUrl}\" alt=\"${fname}\" \n           style=\"width: 100%; height: 100%; object-fit: cover; display: block;\" />\n      \n      <!-- 右上角下载按钮 -->\n      <button class=\"download-btn\" \n              style=\"position: absolute; top: 8px; right: 8px; \n                     width: 32px; height: 32px; border-radius: 50%; \n                     background: rgba(0, 0, 0, 0.8); border: none; \n                     color: white; cursor: pointer; \n                     display: flex; align-items: center; justify-content: center;\n                     font-size: 14px; transition: all 0.2s ease;\n                     backdrop-filter: blur(4px);\"\n              title=\"下载图片\">\n        ⬇\n      </button>\n      \n      <!-- 底部进度显示 -->\n      <div style=\"position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; font-size: 11px; text-align: center;\">\n        ${idx + 1}/${images.length}\n      </div>\n    `;\n    \n    // 先添加到DOM\n    imageGrid.appendChild(imageContainer);\n    \n    // 然后为下载按钮添加事件监听器\n    const downloadBtn = imageContainer.querySelector('.download-btn');\n    if (downloadBtn) {\n      console.log('绑定下载按钮事件:', fname);\n      \n      downloadBtn.addEventListener('click', (e) => {\n        e.preventDefault();\n        e.stopPropagation();\n        console.log('下载按钮点击:', fname);\n        downloadImage(dataUrl, fname);\n      });\n      \n      // 添加悬停效果\n      downloadBtn.addEventListener('mouseenter', () => {\n        downloadBtn.style.background = 'rgba(99, 102, 241, 0.9)';\n        downloadBtn.style.transform = 'scale(1.1)';\n      });\n      \n      downloadBtn.addEventListener('mouseleave', () => {\n        downloadBtn.style.background = 'rgba(0, 0, 0, 0.8)';\n        downloadBtn.style.transform = 'scale(1)';\n      });\n    } else {\n      console.error('下载按钮未找到');\n    }\n  });\n  \n  previewContent.appendChild(imageGrid);\n}\n\n// 下载图片函数\nfunction downloadImage(dataUrl, filename) {\n  const link = document.createElement('a');\n  link.href = dataUrl;\n  link.download = filename;\n  document.body.appendChild(link);\n  link.click();\n  document.body.removeChild(link);\n}\n\n// 在底部显示完整结果（保持原有功能）\nfunction renderCards(list) {\n  const grid = $('grid');\n  const res = $('result');\n  grid.innerHTML = '';\n  list.forEach((it, idx) => {\n    const dataUrl = buildDataURL(it);\n    if (!dataUrl) return;\n    const fname = safeName(it.output_filename || `image_${idx + 1}.png`);\n    const card = document.createElement('div');\n    card.className = 'card';\n    card.innerHTML = `\n      <div class=\"card-image\">\n        <img src=\"${dataUrl}\" alt=\"${fname}\" loading=\"lazy\" decoding=\"async\" />\n      </div>\n      <div class=\"card-meta\">\n        <div class=\"card-desc\">知识卡片已生成完成</div>\n        <div class=\"card-filename\">文件名建议：${fname}（右键图片另存为）</div>\n      </div>\n    `;\n    grid.appendChild(card);\n  });\n}\n\n// DOM 初始化\ndocument.addEventListener('DOMContentLoaded', function() {\n  const f = $('f');\n  const st = $('status');\n  const txt = $('stxt');\n  const fill = $('fill');\n  const done = $('done');\n  const res = $('result');\n  const btnReset = $('reset');\n  const kw = $('kw');\n  const aud = $('aud');\n  const cnt = $('cnt');\n  const sty = $('sty');\n  const goBtn = $('go');\n\n  const formPanel = document.querySelector('.form-panel');\n\n  function showStatus(s, p) { \n    st.classList.remove('hidden'); \n    txt.textContent = s; \n    fill.style.width = p; \n  }\n\n  function disableForm() {\n    formPanel.classList.add('form-disabled');\n    goBtn.classList.add('loading');\n    goBtn.textContent = '生成中...';\n  }\n\n  function enableForm() {\n    formPanel.classList.remove('form-disabled');\n    goBtn.classList.remove('loading');\n    goBtn.textContent = '✨ 开始创作';\n  }\n\n  // 样式选择器交互\n  document.querySelectorAll('.style-option').forEach(option => {\n    option.addEventListener('click', () => {\n      // 如果正在生成中，不允许修改\n      if (goBtn.classList.contains('loading')) return;\n      \n      document.querySelectorAll('.style-option').forEach(opt => opt.classList.remove('selected'));\n      option.classList.add('selected');\n      sty.value = option.dataset.style;\n    });\n  });\n\n  btnReset.addEventListener('click', () => location.reload());\n\n  f.addEventListener('submit', async (e) => {\n    e.preventDefault();\n    if (!aud.value) {\n      alert('请选择目标受众');\n      return;\n    }  \n    // 禁用表单而不是隐藏\n    disableForm(); \n    showStatus('准备提示词...', '20%');\n    \n    const payload = {\n      keywords: kw.value,\n      audience: aud.value,\n      count: Math.max(1, Math.min(6, Number(cnt.value || 3))),\n      style: sty.value\n    };\n\n    try {\n      showStatus('正在生成图片...', '55%');\n      const r = await fetch(POST_URL, {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify(payload)\n      });\n      \n      if (!r.ok) throw new Error(await r.text() || ('HTTP ' + r.status));\n      showStatus('渲染结果中...', '100%');\n\n      const data = await r.json();\n      if (!Array.isArray(data) || data.length === 0) throw new Error('No images returned');\n\n      // 保存全局图片数据\n      generatedImages = data;\n      \n      // 更新右侧预览区域\n      updatePreview(data);\n      \n      // 隐藏状态，显示完成信息\n      done.classList.remove('hidden');\n      \n      // 同时保留底部结果区域（可选）\n      // res.classList.remove('hidden');\n      // renderCards(data);\n    } catch (err) {\n      alert('任务失败: ' + err.message);\n    } finally {\n      // 无论成功或失败，都重新启用表单\n      enableForm();\n    }\n  });\n});\n</script>\n</body>\n</html>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -464,
+        352
+      ],
+      "id": "1f02b61f-3094-444e-9312-122ed4705eb3",
+      "name": "响应：返回UI界面HTML"
+    },
+    {
+      "parameters": {
+        "content": "#### 配置 Gemini Query Auth 👇",
+        "height": 80,
+        "width": 246,
+        "color": 3
+      },
+      "id": "98968c83-04ce-49ff-b242-4b769c02c7b1",
+      "name": "Sticky Note15",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -48,
+        848
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "提取表单参数": {
+      "main": [
+        [
+          {
+            "node": "规范化输入参数",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "规范化输入参数": {
+      "main": [
+        [
+          {
+            "node": "生成生图提示词",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "生成生图提示词": {
+      "main": [
+        [
+          {
+            "node": "调用Gemini生成图片",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "调用Gemini生成图片": {
+      "main": [
+        [
+          {
+            "node": "从API响应提取图片",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "从API响应提取图片": {
+      "main": [
+        [
+          {
+            "node": "逐一处理图片",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "逐一处理图片": {
+      "main": [
+        [
+          {
+            "node": "收集所有成品卡片",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "图片转为Base64",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "创建卡片背景",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "图片转为Base64": {
+      "main": [
+        [
+          {
+            "node": "生成图片中文描述",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "生成图片中文描述": {
+      "main": [
+        [
+          {
+            "node": "提取图片描述文本",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "提取图片描述文本": {
+      "main": [
+        [
+          {
+            "node": "合并：图片与描述数据流",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "创建卡片背景": {
+      "main": [
+        [
+          {
+            "node": "添加描述文字到卡片",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "添加描述文字到卡片": {
+      "main": [
+        [
+          {
+            "node": "合并：图片与描述数据流",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "收集所有成品卡片": {
+      "main": [
+        [
+          {
+            "node": "返回最终JSON结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "合并：图片与描述数据流": {
+      "main": [
+        [
+          {
+            "node": "图像：添加描述文字到卡片",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "图像：添加描述文字到卡片": {
+      "main": [
+        [
+          {
+            "node": "逐一处理图片",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "触发器：接收生成指令": {
+      "main": [
+        [
+          {
+            "node": "提取表单参数",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "触发器：提供UI界面": {
+      "main": [
+        [
+          {
+            "node": "响应：返回UI界面HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "df949e58-60d0-4ce1-829e-94d8803775e6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a5f08ede13bceab7d066ab11fb03ba9312e3e584a39630194ecaef89c79e9ee1"
+  },
+  "id": "3URS7R6OwhWPOhl6",
+  "tags": [
+    {
+      "createdAt": "2025-12-24T03:15:29.885Z",
+      "updatedAt": "2025-12-24T03:15:29.885Z",
+      "id": "NhiSIK0T28SNNoyh",
+      "name": "auto-flow-academy"
+    }
+  ]
+}

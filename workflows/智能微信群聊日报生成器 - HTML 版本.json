@@ -1,0 +1,537 @@
+{
+  "name": "智能微信群聊日报生成器 - HTML & S3 版",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        736,
+        288
+      ],
+      "id": "adbb7af0-599f-47d2-9331-bb12fad5f159",
+      "name": "触发器-每日定时启动"
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:5030/api/v1/chatlog",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={\n  \"time\": \"{{ $json.date }}~{{ $json.date }}\",\n  \"talker\": \"{{ $json.group_name }}\"\n}",
+        "options": {}
+      },
+      "id": "13dee8ba-4e61-40c3-b939-2fcc1c644485",
+      "name": "获取-昨日微信群聊记录",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1200,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=群聊名称为：{{ $('设置-通用配置变量').item.json.group_name }}\n日期: {{ $('设置-通用配置变量').item.json.date }}\n\n将{{ $json.data}}按照如下要求执行\n\n## 任务要求\n请详细分析群聊记录，并输出**严格JSON格式**的结构化数据，用于后续HTML模板渲染\n\n## 输出格式 - **必须严格遵守**\n```json\n{\n  \"basicInfo\": {\n    \"groupName\": \"群名称\",\n    \"date\": \"2025-09-15\",\n    \"timeRange\": \"08:30:51 - 21:26:14\",\n    \"totalMessages\": 45,\n    \"activeUsers\": 12,\n    \"hotTopics\": 6,\n    \"peakTime\": \"10:00-12:00\"\n  },\n  \"summary\": \"具体的群聊总结内容，包含群聊内容概述、统计信息等\",\n  \"activeUsers\": [\n    {\n      \"name\": \"ken(ken030801)\",\n      \"count\": 10,\n      \"percentage\": \"22.2%\"\n    }\n  ],\n  \"timeDistribution\": [\n    {\n      \"timeSlot\": \"08:00-10:00\",\n      \"count\": 3,\n      \"percentage\": \"6.7%\"\n    }\n  ],\n  \"hotTopics\": [\n    {\n      \"title\": \"AI模型API调用优化与成本控制\",\n      \"category\": \"技术讨论\",\n      \"keywords\": [\"API调用\", \"成本控制\", \"Gemini\", \"模型优化\", \"参数调整\"],\n      \"messageCount\": 15,\n      \"keywordMentions\": \"API调用(8)、成本(6)、优化(5)\",\n      \"content\": \"群友们围绕AI模型API的使用成本展开深入讨论。@Wonder 分享了关于gemini-2.5-flash-image-preview模型的使用经验，提到需要绑卡但免费额度较高。@LQ 指出成本控制的重要性，建议通过提取关键内容和优化输入数据来降低费用。@钟南 从技术角度分析了稳定登录国外模型的考验。讨论涉及免费API的限制、绑卡的重要性以及如何在保证功能的前提下优化成本，为群友们提供了实用的API调用策略和成本管理建议。\"\n    }\n  ],\n  \"quotes\": [\n    {\n      \"author\": \"@ken(ken030801)\",\n      \"time\": \"11:35:11\",\n      \"content\": \"@芋头小宝-AI解决方案工程师 @LQ 大佬好，我原来在本地n8n中用HTTP Request配置了F5作为语音生成...\"\n    }\n  ],\n  \"links\": [\n    {\n      \"title\": \"Index_TTS2_API_集成指南\",\n      \"url\": \"http://host.docker.internal:5030/file/d6e71d727d5d6a89c0dc024988165392\"\n    }\n  ],\n  \"stars\": [\n    {\n      \"name\": \"@ken(ken030801)\",\n      \"count\": 10,\n      \"percentage\": \"22.2%\",\n      \"description\": \"主要讨论Index TTS2 API集成问题，分享本地部署经验和遇到的困难，寻求技术帮助，积极参与TTS应用场景讨论。\"\n    }\n  ],\n  \"wordCloud\": [\"n8n\", \"API\", \"TTS\", \"IndexTTS2\", \"语音合成\", \"Cloudflare\", \"Turnstile\"],\n  \"kol\": {\n    \"name\": \"ken(ken030801)\",\n    \"reason\": \"ken在今日群聊中表现最为活跃，主要围绕Index TTS2这一热门技术展开深度讨论...\"\n  }\n}\n```\n\n## 最高优先级\n以下是要求是优先级最高的任务，务必严格执行\n\n- **输出格式必须是纯JSON，不要任何markdown格式或其他文本**\n- 遍历群聊所有消息，识别今日KOL, {JSON字段要求} 务必围绕 KOL 的话题、聊天内容展开\n- KOL要求：综合考虑群聊人数占比，发言数量、质量、价值点与启发点\n\n## 数据统计规则\n### 1. 定义\"真实消息\"\n一条\"真实消息\"指的是由群成员用户主动发送的任何内容，不包括由系统自动生成的各类通知和提醒。\n\n### 2. 消息识别标准\n一行文本代表一条新消息的开始（应计为1条），当且仅当它同时满足以下两个条件：\n- **条件一**：该行文本中必须包含一个 `HH:MM:SS` 格式的时间戳\n- **条件二**：该行文本**不能**以\"系统消息\"这四个字作为开头\n\n### 3. 必须排除的项\n- 所有明确以\"系统消息\"开头的行\n- 不包含用户昵称和时间戳的系统补充说明行\n- 仅作为消息内容换行的文本行\n\n### 4. 必须包含的项\n- 普通文本消息\n- 图片消息（格式通常为 `![图片](...)`）\n- 动画表情（格式通常为 `[动画表情]`）\n- 合并转发的消息（格式通常为 `[合并转发|]`）\n- \"拍了拍\"提醒\n\n## JSON字段要求\n\n### summary（群聊总结）\n生成一段100-150字的精炼群聊总结，重点突出：\n- 当日讨论的核心话题和主要内容\n- 讨论的深度和价值\n- 群友们获得的收获和启发\n- 整体讨论氛围\n\n要求：\n- 不要重复统计数据（消息数、用户数等，上方已有统计）\n- 不要过多提及具体用户名，专注于内容本身\n- 语言简洁有力，突出讨论价值\n- 适合作为日报的核心摘要\n\n良好示例：\n\"今日群聊围绕AI技术前沿展开深度探讨，重点关注了模型优化、API成本控制等实用技术。讨论涉及多个热门工具的实\n战经验分享，群友们在技术选型和解决方案方面获得了宝贵启发。整体氛围浓厚，体现出对新技术的敏锐洞察和务实态\n度。\"\n\n### basicInfo\n- groupName: 群名称\n- date: 统计日期\n- timeRange: 时间范围（首条-末条消息）\n- totalMessages: 消息总数（严格按统计规则）\n- activeUsers: 活跃人员数量\n- hotTopics: 热点话题数量\n- peakTime: 聊天高峰时段\n\n### activeUsers\n按发言数量降序排列，每个用户包含：\n- name: 用户名\n- count: 发言数量\n- percentage: 占比\n\n### timeDistribution\n按时间段统计，每个时段包含：\n- timeSlot: 时间段（如\"08:00-10:00\"）\n- count: 消息数量\n- percentage: 占比\n\n### hotTopics\n不少于 6 个热点话题，按关键词提及次数排序：\n- title: **话题标题（概括性描述，不超过20字）**\n- keywords: 关键词数组（3-5个）\n- messageCount: 消息数量\n- keywordMentions: 关键词提及次数统计\n- content: **话题总结描述（150-300字）**\n  **格式要求：这里不要直接引用原始聊天记录，而是要概括性地描述话题内容，说明讨论的核心观点、参与人员的主要观点、讨论的价值和意义**\n  **示例格式：群友们围绕[话题]展开深入讨论。@用户A 分享了...的经验，@用户B 提出了...的观点，@用户C 从...角度分析了...。讨论涉及...等方面，为群友们提供了...方面的帮助和启发。**\n\n- category: 话题分类标签，根据话题内容自动分类，可选分类包括：\n  - \"技术讨论\" - 技术相关的讨论和问题\n  - \"工具评测\" - 工具、软件、平台的使用体验和评测\n  - \"行业应用\" - 实际应用场景和案例分享\n  - \"学习分享\" - 学习心得、教程、知识分享\n  - \"资源推荐\" - 资源、链接、工具推荐\n  - \"问题求助\" - 寻求帮助和解决方案\n  - \"经验交流\" - 实践经验和心得体会\n  - \"热点讨论\" - 其他热门话题讨论\n\n### quotes\n至少20条精彩引用：\n- author: 发言人（**必须加@前缀，格式：@真实姓名**）\n- time: 时间\n- content: 原话内容\n**引用标准：高质量，有启发性，有道理，有价值，有反响，有深度，有思考，惊艳且让人印象深刻**\n\n### links\n所有真实链接：\n- title: 链接标题\n- url: 链接地址\n**注意：排除以下类型的链接**\n- **排除日报、入群方式、历史报告等管理类链接**\n- **排除本地图片链接（以host.docker.internal开头的链接）**\n- **只保留真实有效的外部资源链接**\n\n### stars\n活跃之星（发言3次以上，至少9人）：\n- name: 用户名（**必须加@前缀，格式：@真实姓名**）\n- count: 发言次数\n- percentage: 占比\n- description: 贡献描述（50-100字）\n\n### wordCloud\n高频词汇数组（至少30个）\n\n### kol\n今日KOL：\n- name: KOL姓名\n- reason: 推荐理由（详细说明）\n\n### 注意事项\n- 人员前+@\n- 人员显示真实名称，而不用@我之类的指代\n\n## 重要提醒\n- **输出必须是有效的JSON格式**\n- **不要使用markdown代码块```json```**\n- **确保所有字符串正确转义**\n- **数字类型用数字，不要用字符串**\n- **严格按照数据统计规则统计消息数量**\n- **用户名格式统一要求（所有字段必须严格遵守）：**\n  - **quotes字段的author：必须加@前缀，格式为\"@真实姓名\"，如\"@LQ\"、\"@思远Dave\"**\n  - **stars字段的name：必须加@前缀，格式为\"@真实姓名\"，如\"@LQ\"、\"@思远Dave\"**\n  - **所有字段中的用户名只显示@真实姓名，不显示括号内的ID信息**\n  - **不要使用@我等指代词，必须使用真实用户名**\n  - **用户名后必须加空格再接具体内容**\n- **热点话题content字段特别要求：**\n  - **不要直接复制粘贴原始聊天记录**\n  - **不要包含时间戳信息**\n  - **要用概括性的语言描述话题的讨论过程和核心观点**\n  - **重点突出讨论的价值和对群友的帮助**\n- **内容质量要求：引用内容必须高质量、有启发性、有价值、有深度**\n- **链接过滤：排除日报、入群方式、历史报告等管理类链接**",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        32,
+        576
+      ],
+      "id": "ddcf4a74-4025-451d-80b7-260b6c9615f1",
+      "name": "AI-分析并总结群聊内容"
+    },
+    {
+      "parameters": {
+        "errorMessage": "生成失败"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        976,
+        704
+      ],
+      "id": "e0e776b8-45d3-44ca-b121-8d3f2be5d01a",
+      "name": "错误处理-生成失败"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"basicInfo\": {\n    \"groupName\": \"群名称\",\n    \"date\": \"2025-09-15\",\n    \"timeRange\": \"08:30:51 - 21:26:14\",\n    \"totalMessages\": 45,\n    \"activeUsers\": 12,\n    \"hotTopics\": 6,\n    \"peakTime\": \"10:00-12:00\"\n  },\n  \"summary\": \"具体的群聊总结内容，包含群聊内容概述、统计信息等\",\n  \"activeUsers\": [\n    {\n      \"name\": \"ken(ken030801)\",\n      \"count\": 10,\n      \"percentage\": \"22.2%\"\n    }\n  ],\n  \"timeDistribution\": [\n    {\n      \"timeSlot\": \"08:00-10:00\",\n      \"count\": 3,\n      \"percentage\": \"6.7%\"\n    }\n  ],\n  \"hotTopics\": [\n    {\n      \"title\": \"Index TTS2 API集成问题\",\n      \"category\": \"技术讨论\",\n      \"keywords\": [\"Index TTS2\", \"API调用\", \"语音合成\", \"HTTP Request\", \"Gradio\"],\n      \"messageCount\": 8,\n      \"keywordMentions\": \"Index TTS2(5)、API(4)、语音合成(3)\",\n      \"content\": \"@ken(ken030801) 11:35:11: 我原来在本地n8n中用HTTP Request配置了F5作为语音生成，可以正常使用...\"\n    }\n  ],\n  \"quotes\": [\n    {\n      \"author\": \"ken(ken030801)\",\n      \"time\": \"11:35:11\",\n      \"content\": \"@芋头小宝-AI解决方案工程师 @LQ 大佬好，我原来在本地n8n中用HTTP Request配置了F5作为语音生成...\"\n    }\n  ],\n  \"links\": [\n    {\n      \"title\": \"Index_TTS2_API_集成指南\",\n      \"url\": \"http://host.docker.internal:5030/file/d6e71d727d5d6a89c0dc024988165392\"\n    }\n  ],\n  \"stars\": [\n    {\n      \"name\": \"ken(ken030801)\",\n      \"count\": 10,\n      \"percentage\": \"22.2%\",\n      \"description\": \"主要讨论Index TTS2 API集成问题，分享本地部署经验和遇到的困难，寻求技术帮助，积极参与TTS应用场景讨论。\"\n    }\n  ],\n  \"wordCloud\": [\"n8n\", \"API\", \"TTS\", \"IndexTTS2\", \"语音合成\", \"Cloudflare\", \"Turnstile\"],\n  \"kol\": {\n    \"name\": \"ken(ken030801)\",\n    \"reason\": \"ken在今日群聊中表现最为活跃，主要围绕Index TTS2这一热门技术展开深度讨论...\"\n  }\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        288,
+        720
+      ],
+      "id": "55cc1d48-c04c-4192-a9dc-7a4a49c5c401",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 将HTML字符串转换为binary数据\nconst htmlContent = $input.first().json.data || $input.first().json.html || JSON.stringify($input.first().json);\nconst fileName = `群聊日报_${$('设置-通用配置变量').item.json.date}.html`;\n\nreturn [{\n  binary: {\n    data: {\n      data: Buffer.from(htmlContent, 'utf8').toString('base64'),\n      mimeType: 'text/html',\n      fileName: fileName,\n      fileExtension: 'html'\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        592
+      ],
+      "id": "0e0da8c6-1320-4c37-b496-631ec8046a11",
+      "name": "转换-HTML字符串到Binary"
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "bucketName": "=chat-daily",
+        "fileName": "={{ $('设置-通用配置变量').item.json.date }}.html",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        592
+      ],
+      "id": "7cc00bf9-7ded-4bb2-8043-fbfb0cec46c2",
+      "name": "Upload a file"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "57e38f7d-8fec-444b-b661-af456ab1c4f1",
+              "name": "preview_url",
+              "value": "={{ $('设置-通用配置变量').item.json.public_url }}/{{ $('设置-通用配置变量').item.json.date }}.html",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1632,
+        592
+      ],
+      "id": "120d1e96-30a0-4fc1-995c-51530567f942",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "37d06c53-4fc7-44f8-abe7-cbddb2402d58",
+              "leftValue": "={{  $json.data && $json.data.length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        288
+      ],
+      "id": "789a0771-c529-442e-aa4c-18d423f37f04",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        288
+      ],
+      "id": "c7066196-d089-4a31-80b3-54d2eb842fe7",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取AI分析的JSON数据\nconst aiOutput = $('AI-分析并总结群聊内容').first().json.output;\nlet data;\n\n// 处理数据格式\nif (Array.isArray(aiOutput) && aiOutput.length > 0) {\n  data = aiOutput[0].output || aiOutput[0];\n} else if (aiOutput && aiOutput.output) {\n  data = aiOutput.output;\n} else {\n  data = aiOutput;\n}\n\n// 获取配置变量\nconst groupName = $('设置-通用配置变量').first().json.group_name;\nconst reportDate = $('设置-通用配置变量').first().json.date;\nconst historyReportUrl = $('设置-通用配置变量').first().json.history_report_url;\nconst yesterdayReportUrl = $('设置-通用配置变量').first().json.public_url + \"/\"+new Date(Date.parse($('设置-通用配置变量').first().json.date) - 86400000).toISOString().slice(0, 10) + \".html\";\n\n// 格式化日期\nfunction formatDate(dateStr) {\n  const date = new Date(dateStr);\n  return date.getFullYear() + '年' + (date.getMonth() + 1) + '月' + date.getDate() + '日';\n}\n\n// 增强版网页模板V5.09 - 调整模块顺序\nconst templateHtml = `<!DOCTYPE html>\n<html lang=\"zh-CN\" data-theme=\"light\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>[在此处填写报告标题] - [日期]</title>\n    <link rel=\"stylesheet\" href=\"https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/tailwindcss/2.2.19/tailwind.min.css\">\n    <link rel=\"stylesheet\" href=\"https://lf6-cdn-tos.bytecdntp.com/cdn/expire-100-M/font-awesome/6.0.0/css/all.min.css\">\n    <script src=\"https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js\"></script>\\n    <script src=\"https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>\n    <style>\n        :root {\n            --bg-primary: #F5F5EE;\n            --bg-secondary: #faf9f6;\n            --bg-tertiary: #f1f3f5;\n            --text-primary: #212529;\n            --text-secondary: #495057;\n            --accent-primary: #FB651E;\n            --accent-secondary: #ff8906;\n            --accent-tertiary: #e8590c;\n            --accent-blue: #007EFF;\n            --accent-purple: #7048e8;\n            --accent-cyan: #10B981;\n            --accent-pink: #ec4899;\n            --accent-yellow: #f59e0b;\n            --highlight-keyword-bg: #ffe8cc;\n            --highlight-name-color: #7048e8;\n        }\n        [data-theme=\"dark\"] {\n            --bg-primary: #0f0e17;\n            --bg-secondary: #1a1925;\n            --bg-tertiary: #232136;\n            --text-primary: #ffffff;\n            --text-secondary: #a7a9be;\n            --highlight-keyword-bg: #3d2f00;\n        }\n        body {\n            font-family: 'Inter', sans-serif;\n            background-color: var(--bg-primary);\n            color: var(--text-primary);\n            margin: 0;\n            padding: 0;\n            transition: all 0.3s ease;\n        }\n        .grid-container {\n            display: grid;\n            grid-template-columns: repeat(12, 1fr);\n            gap: 1.5rem;\n            max-width: 1400px;\n            margin: 0 auto;\n            padding: 2rem;\n        }\n        .card {\n            background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(255, 255, 255, 0.9) 100%);\n            border-radius: 16px;\n            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);\n            transition: all 0.3s ease;\n            position: relative;\n            overflow: hidden;\n        }\n        [data-theme=\"dark\"] .card {\n            background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(26, 25, 37, 0.9) 100%);\n        }\n        .card:hover {\n            transform: translateY(-4px);\n            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);\n        }\n        .main-card {\n            grid-column: 1 / -1;\n            padding: 3rem;\n            text-align: center;\n            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%) !important;\n            color: white;\n        }\n        .main-card h1 {\n            font-size: 3rem;\n            font-weight: 700;\n            margin: 0 0 1rem 0;\n            background: linear-gradient(45deg, #fff, #f0f0f0);\n            -webkit-background-clip: text;\n            -webkit-text-fill-color: transparent;\n            background-clip: text;\n        }\n        .date {\n            font-size: 1.2rem;\n            opacity: 0.9;\n            margin-bottom: 2rem;\n        }\n        .meta-info {\n            display: flex;\n            justify-content: center;\n            gap: 2rem;\n            margin-bottom: 2rem;\n            flex-wrap: wrap;\n        }\n        .meta-info span {\n            background: rgba(255, 255, 255, 0.2);\n            padding: 0.75rem 1.5rem;\n            border-radius: 25px;\n            font-weight: 600;\n            backdrop-filter: blur(10px);\n        }\n        .summary {\n            font-size: 1.1rem;\n            line-height: 1.6;\n            max-width: 800px;\n            margin: 0 auto;\n            text-align: left;\n        }\n        .active-users-chart-card {\n            grid-column: 1 / 7;\n            padding: 2rem;\n        }\n        .message-distribution-chart-card {\n            grid-column: 7 / -1;\n            padding: 2rem;\n        }\n        .topic-cards-wrapper {\n            grid-column: 1 / -1;\n            display: grid;\n            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));\n            gap: 1.5rem;\n        }\n        .topic-card {\n            padding: 2rem;\n            border-radius: 16px;\n            transition: all 0.3s ease;\n        }\n        \n        /* 暗黑模式下话题卡片的特殊处理 */\n        [data-theme=\"dark\"] .topic-card {\n            background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(35, 33, 54, 0.9) 100%) !important;\n            border-left: 4px solid var(--topic-border-color) !important;\n        }\n        [data-theme=\"dark\"] .topic-card h2 {\n            color: var(--topic-border-color) !important;\n        }\n        [data-theme=\"dark\"] .topic-card p {\n            color: var(--text-primary) !important;\n        }\n        [data-theme=\"dark\"] .topic-card .topic-mentions {\n            color: var(--topic-border-color) !important;\n        }\n        \n        .quote-card, .links-card { grid-column: span 6; padding: 2rem; }\n        .stats-card { grid-column: span 7; padding: 2rem; }\n        .wordcloud-card { grid-column: span 5; padding: 2rem; }\n        .chart-container { height: 300px; margin-top: 1rem; }\n        \n        /* 链接样式 */\n        .link-item {\n            display: flex;\n            align-items: center;\n            margin-bottom: 12px;\n            padding: 12px;\n            border-radius: 8px;\n            background: var(--bg-tertiary);\n            transition: all 0.3s ease;\n            cursor: pointer;\n            border: 1px solid transparent;\n        }\n        .link-item:hover {\n            background: rgba(0, 126, 255, 0.1);\n            transform: translateX(4px);\n            border-color: var(--accent-blue);\n        }\n        .link-item a {\n            text-decoration: none;\n            color: var(--text-primary);\n            font-weight: 500;\n            flex-grow: 1;\n            display: flex;\n            align-items: center;\n            width: 100%;\n        }\n        .link-item:hover a {\n            color: var(--accent-blue);\n        }\n        .link-icon {\n            margin-right: 12px;\n            color: var(--accent-blue);\n            font-size: 1.1rem;\n            min-width: 20px;\n        }\n        \n        /* 高亮样式 */\n        .highlight-keyword {\n            background: var(--highlight-keyword-bg) !important;\n            color: var(--accent-tertiary) !important;\n            padding: 0.1rem 0.3rem;\n            border-radius: 4px;\n            font-weight: 600;\n        }\n        .highlight-name {\n            color: var(--highlight-name-color) !important;\n            font-weight: 600;\n            background: rgba(112, 72, 232, 0.1);\n            padding: 0.1rem 0.3rem;\n            border-radius: 4px;\n        }\n        \n        .theme-switcher {\n            position: fixed;\n            top: 2rem;\n            right: 2rem;\n            background: var(--bg-secondary);\n            color: var(--text-primary);\n            border: 2px solid var(--accent-primary);\n            border-radius: 50%;\n            width: 56px;\n            height: 56px;\n            cursor: pointer;\n            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);\n            z-index: 1000;\n            display: flex;\n            align-items: center;\n            justify-content: center;\n            transition: all 0.3s ease;\n        }\n        .theme-switcher:hover {\n            transform: scale(1.1);\n            background: var(--accent-primary);\n            color: white;\n        }\n        \n        /* 扫码关注区域样式 */\n        .qr-code-container {\n            grid-column: 1 / -1;\n            margin-top: 2rem;\n            padding: 3rem 2rem;\n            text-align: center;\n            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);\n            border-radius: 16px;\n            color: white;\n        }\n        .qr-code-container h2 {\n            font-size: 2rem;\n            font-weight: 700;\n            margin: 0 0 2rem 0;\n            color: white;\n        }\n        .qr-code-container h2 i {\n            margin-right: 0.75rem;\n            font-size: 1.8rem;\n        }\n        .qr-code-grid {\n            display: flex;\n            flex-wrap: wrap;\n            justify-content: center;\n            gap: 2rem;\n            margin-top: 2rem;\n        }\n        .qr-code-item {\n            background: rgba(255, 255, 255, 0.15);\n            border-radius: 12px;\n            padding: 1.5rem;\n            width: 140px;\n            display: flex;\n            flex-direction: column;\n            align-items: center;\n            text-align: center;\n            backdrop-filter: blur(10px);\n            border: 1px solid rgba(255, 255, 255, 0.2);\n            transition: all 0.3s ease;\n        }\n        .qr-code-item:hover {\n            transform: translateY(-4px);\n            background: rgba(255, 255, 255, 0.25);\n            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);\n        }\n        .qr-code-item img {\n            width: 100px;\n            height: 100px;\n            border-radius: 8px;\n            margin-bottom: 0.75rem;\n            border: 2px solid rgba(255, 255, 255, 0.3);\n        }\n        .qr-code-item span {\n            font-size: 0.9rem;\n            font-weight: 600;\n            color: white;\n        }\n        \n        /* 深色模式下二维码反色 */\n        [data-theme=\"dark\"] .qr-code-item img {\n            filter: invert(1) hue-rotate(180deg);\n        }\n        \n        /* Footer样式 */\n        .footer {\n            grid-column: 1 / -1;\n            margin-top: 2rem;\n            padding: 2rem;\n            text-align: center;\n            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);\n            border-radius: 16px;\n            border-top: 4px solid var(--accent-primary);\n        }\n        .footer-content {\n            display: flex;\n            justify-content: space-between;\n            align-items: center;\n            max-width: 800px;\n            margin: 0 auto;\n            flex-wrap: wrap;\n            gap: 1rem;\n        }\n        .footer-info {\n            color: var(--text-secondary);\n            font-size: 0.9rem;\n        }\n        .footer-actions {\n            display: flex;\n            gap: 1rem;\n            flex-wrap: wrap;\n        }\n        .footer-btn {\n            background: var(--accent-primary);\n            color: white;\n            padding: 0.5rem 1rem;\n            border-radius: 8px;\n            text-decoration: none;\n            font-weight: 500;\n            transition: all 0.3s ease;\n            border: none;\n            cursor: pointer;\n        }\n        .footer-btn:hover {\n            background: var(--accent-secondary);\n            transform: translateY(-2px);\n        }\n        .footer-btn i {\n            margin-right: 0.5rem;\n        }\n        \n        @media (max-width: 768px) {\n            .grid-container { grid-template-columns: 1fr; padding: 1rem; }\n            .active-users-chart-card, .message-distribution-chart-card,\n            .quote-card, .links-card, .stats-card, .wordcloud-card { grid-column: 1; }\n            .main-card h1 { font-size: 2rem; }\n            .meta-info { flex-direction: column; gap: 1rem; }\n            .footer-content { flex-direction: column; text-align: center; }\n            .qr-code-grid { gap: 1rem; }\n            .qr-code-item { width: 120px; padding: 1rem; }\n            .qr-code-item img { width: 80px; height: 80px; }\n            .qr-code-container h2 { font-size: 1.5rem; }\n            \n            /* 移动端表格样式优化 - 活跃之星 */\n            .stats-card table {\n                font-size: 0.85rem;\n                display: block;\n                overflow-x: auto;\n                white-space: nowrap;\n                -webkit-overflow-scrolling: touch;\n            }\n            .stats-card table thead,\n            .stats-card table tbody,\n            .stats-card table th,\n            .stats-card table td,\n            .stats-card table tr {\n                display: block;\n            }\n            .stats-card table thead tr {\n                position: absolute;\n                top: -9999px;\n                left: -9999px;\n            }\n            .stats-card table tr {\n                border: 1px solid var(--bg-tertiary);\n                margin-bottom: 0.5rem;\n                border-radius: 8px;\n                padding: 0.75rem;\n                background: var(--bg-secondary);\n            }\n            .stats-card table td {\n                border: none;\n                position: relative;\n                padding: 0.5rem 0 0.5rem 35%;\n                text-align: left;\n                white-space: normal;\n            }\n            .stats-card table td:before {\n                content: attr(data-label);\n                position: absolute;\n                left: 0;\n                width: 30%;\n                padding-right: 0.5rem;\n                white-space: nowrap;\n                text-align: left;\n                font-weight: 600;\n                color: var(--accent-primary);\n            }\n            .stats-card table td:nth-of-type(1):before { content: \"用户\"; }\n            .stats-card table td:nth-of-type(2):before { content: \"发言数\"; }\n            .stats-card table td:nth-of-type(3):before { content: \"主要贡献\"; }\n        }\n    </style>\n</head>\n<body>\n    <button class=\"theme-switcher\" onclick=\"toggleTheme()\" title=\"切换主题\">\n        <i class=\"fas fa-sun\" id=\"sun-icon\"></i>\n        <i class=\"fas fa-moon\" id=\"moon-icon\" style=\"display: none;\"></i>\n    </button>\n    <div class=\"grid-container\">\n        <div class=\"card main-card\">\n            <h1>[主报告标题]</h1>\n            <div class=\"date\">[日期]</div>\n            <div class=\"meta-info\">\n                <span><i class=\"fas fa-comment\"></i> 消息数: [消息数]</span>\n                <span><i class=\"fas fa-users\"></i> 活跃用户: [活跃用户数]</span>\n                <span><i class=\"fas fa-fire\"></i> 热点话题: [热点话题数]</span>\n            </div>\n            <p class=\"summary\">[总体摘要内容]</p>\n            <i class=\"fas fa-microchip\" style=\"position: absolute; top: 1rem; right: 1rem; font-size: 2rem; opacity: 0.1;\"></i>\n        </div>\n        <div class=\"card active-users-chart-card\">\n            <h2><i class=\"fas fa-chart-bar\"></i> 活跃用户分布</h2>\n            <div class=\"chart-container\"><canvas id=\"activeUsersChart\"></canvas></div>\n        </div>\n        <div class=\"card message-distribution-chart-card\">\n            <h2><i class=\"fas fa-clock\"></i> 消息时间分布</h2>\n            <div class=\"chart-container\"><canvas id=\"messageDistributionChart\"></canvas></div>\n        </div>\n        <div class=\"topic-cards-wrapper\">[热点话题卡片内容]</div>\n        <div class=\"card quote-card\">\n            <h2><i class=\"fas fa-quote-left\"></i> 精彩引用</h2>\n            [精彩引用内容]\n        </div>\n        <div class=\"card links-card\">\n            <h2><i class=\"fas fa-link\"></i> 重要链接与资源</h2>\n            [重要链接内容]\n        </div>\n        <div class=\"card stats-card\">\n            <h2><i class=\"fas fa-star\"></i> 活跃之星</h2>\n            [活跃之星内容]\n        </div>\n        <div class=\"card wordcloud-card\">\n            <h2><i class=\"fas fa-cloud\"></i> 词云</h2>\n            <div>[词云内容]</div>\n        </div>\n        \n        <!-- 扫码关注 / 加入我们区域 - 现在放在数据来源上面 -->\n        <div class=\"qr-code-container\">\n            <h2><i class=\"fas fa-qrcode\"></i> 扫码关注 / 加入我们</h2>\n            <div class=\"qr-code-grid\">\n                <div class=\"qr-code-item\">\n                    <img src=\"https://pub-f23b718605a64dac9ec2bd79b4327eda.r2.dev/LunarAITalk.jpg\" alt=\"林月半子微信\" onerror=\"this.onerror=null;this.src='https://placehold.co/100x100/F5F5EE/FB651E?text=林月半子微信';\">\n                    <span>林月半子微信</span>\n                </div>\n                <div class=\"qr-code-item\">\n                    <img src=\"https://pub-f23b718605a64dac9ec2bd79b4327eda.r2.dev/LunarAITalk_mp.jpg\" alt=\"林月半子公众号\" onerror=\"this.onerror=null;this.src='https://placehold.co/100x100/F5F5EE/FB651E?text=林月半子公众号';\">\n                    <span>林月半子公众号</span>\n                </div>\n                <div class=\"qr-code-item\">\n                    <img src=\"https://pub-f23b718605a64dac9ec2bd79b4327eda.r2.dev/yutou_baby.jpg\" alt=\"芋头小宝微信\" onerror=\"this.onerror=null;this.src='https://placehold.co/100x100/F5F5EE/FB651E?text=芋头小宝微信';\">\n                    <span>芋头小宝微信</span>\n                </div>\n                <div class=\"qr-code-item\">\n                    <img src=\"https://pub-f23b718605a64dac9ec2bd79b4327eda.r2.dev/yutou_baby_mp.jpg\" alt=\"芋头小宝公众号\" onerror=\"this.onerror=null;this.src='https://placehold.co/100x100/F5F5EE/FB651E?text=芋头小宝公众号';\">\n                    <span>芋头小宝公众号</span>\n                </div>\n                <div class=\"qr-code-item\">\n                    <img src=\"https://pub-f23b718605a64dac9ec2bd79b4327eda.r2.dev/LunarAITalk.jpg\" alt=\"群聊加入方式\" onerror=\"this.onerror=null;this.src='https://placehold.co/100x100/F5F5EE/FB651E?text=加群QR';\">\n                    <span>群聊加入方式</span>\n                </div>\n            </div>\n        </div>\n        \n        <!-- Footer区域 - 现在放在扫码关注下面 -->\n        <div class=\"footer\">\n            <div class=\"footer-content\">\n                <div class=\"footer-info\">\n                    <p><strong>数据来源：</strong> [群聊名称] | <strong>生成日期：</strong> [日期] | <strong>统计周期：</strong> [日期]全天</p>\n                    <p>本报告由AI自动生成，仅供参考，不代表所有群成员观点。</p>\n                </div>\n                <div class=\"footer-actions\">\n                    <button class=\"footer-btn\" style=\"display:none;\">\n                        <i class=\"fas fa-copy\"></i> 拷贝截图\n                    </button>\n                    <button class=\"footer-btn\" onclick=\"downloadReport()\">\n                        <i class=\"fas fa-download\"></i> 下载截图\n                    </button>\n                    <button class=\"footer-btn\" onclick=\"copySource()\">\n                        <i class=\"fas fa-code\"></i> 拷贝源码\n                    </button>\n                    <button class=\"footer-btn\" onclick=\"downloadHTML()\">\n                        <i class=\"fas fa-download\"></i> 下载报告\n                    </button>\n                    <button class=\"footer-btn\" onclick=\"viewHistory()\">\n                        <i class=\"fas fa-history\"></i> 查看历史日报\n                    </button>\n                    <button class=\"footer-btn\" onclick=\"viewYesterday()\">\n                        <i class=\"fas fa-calendar\"></i> 查看昨日日报\n                    </button>\n                </div>\n            </div>\n        </div>\n    </div>\n    <script>\n        function toggleTheme() {\n            const html = document.documentElement;\n            const currentTheme = html.getAttribute('data-theme');\n            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';\n            html.setAttribute('data-theme', newTheme);\n            const sunIcon = document.getElementById('sun-icon');\n            const moonIcon = document.getElementById('moon-icon');\n            if (newTheme === 'dark') {\n                sunIcon.style.display = 'none';\n                moonIcon.style.display = 'inline';\n            } else {\n                sunIcon.style.display = 'inline';\n                moonIcon.style.display = 'none';\n            }\n            localStorage.setItem('theme', newTheme);\n        }\n        \n        // Footer按钮功能\n        function copyToClipboard() {\n            alert('拷贝截图功能需要浏览器支持，请手动截图保存');\n        }\n        function downloadReport() {\n            if(typeof html2canvas !== 'undefined'){const el=document.querySelector('.grid-container');const btn=event.target;btn.innerHTML='<i class=\"fas fa-spinner fa-spin\"></i> 处理中...';btn.disabled=true;const hide=[document.querySelector('.theme-switcher'),document.querySelector('.footer-actions')];hide.forEach(e=>{if(e)e.style.display='none'});window.scrollTo(0,0);setTimeout(()=>{html2canvas(el,{scale:2.5,useCORS:true,backgroundColor:'#F5F5EE'}).then(canvas=>{const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download='群聊日报.png';a.click();const msg=document.createElement('div');msg.textContent='截图已开始下载!';msg.style.cssText='position:fixed;top:20px;right:20px;z-index:10000;padding:1rem 1.5rem;border-radius:8px;color:white;background:#10B981;box-shadow:0 4px 12px rgba(0,0,0,0.15)';document.body.appendChild(msg);setTimeout(()=>document.body.removeChild(msg),3000);}).finally(()=>{hide.forEach(e=>{if(e)e.style.display=''});btn.innerHTML='<i class=\"fas fa-download\"></i> 下载截图';btn.disabled=false})},100)}else{alert('请稍候，截图库正在加载...');}\n        }\n        function copySource() {\n            navigator.clipboard.writeText(document.documentElement.outerHTML);\n            alert('源码已复制到剪贴板');\n        }\n        function downloadHTML() {\n            const blob = new Blob([document.documentElement.outerHTML], {type: 'text/html'});\n            const url = URL.createObjectURL(blob);\n            const a = document.createElement('a');\n            a.href = url;\n            a.download = '群聊日报.html';\n            a.click();\n            URL.revokeObjectURL(url);\n        }\n        function viewHistory() {\n            const url = '[HISTORY_URL]';\n            if (url && url.trim() !== '') {\n                window.open(url, '_blank');\n            } else {\n                alert('历史日报链接未配置');\n            }\n        }\n        function viewYesterday() {\n            const url = '[YESTERDAY_URL]';\n            if (url && url.trim() !== '') {\n                window.open(url, '_blank');\n            } else {\n                alert('昨日日报链接未配置');\n            }\n        }\n        \n        document.addEventListener('DOMContentLoaded', function() {\n            const savedTheme = localStorage.getItem('theme') || 'light';\n            document.documentElement.setAttribute('data-theme', savedTheme);\n            const sunIcon = document.getElementById('sun-icon');\n            const moonIcon = document.getElementById('moon-icon');\n            if (savedTheme === 'dark') {\n                sunIcon.style.display = 'none';\n                moonIcon.style.display = 'inline';\n            }\n        });\n        const activeUsersData = [ACTIVE_USERS_DATA];\n        const messageDistributionData = [MESSAGE_DISTRIBUTION_DATA];\n        function initActiveUsersChart() {\n            const ctx = document.getElementById('activeUsersChart');\n            if (!ctx || !activeUsersData.length) return;\n            new Chart(ctx, {\n                type: 'bar',\n                data: {\n                    labels: activeUsersData.map(user => user.name.replace(/\\\\([^)]*\\\\)/g, '')),\n                    datasets: [{\n                        label: '发言数量',\n                        data: activeUsersData.map(user => user.count),\n                        backgroundColor: [\n                            'rgba(251, 101, 30, 0.8)', 'rgba(0, 126, 255, 0.8)', 'rgba(112, 72, 232, 0.8)',\n                            'rgba(16, 185, 129, 0.8)', 'rgba(236, 72, 153, 0.8)', 'rgba(245, 158, 11, 0.8)'\n                        ],\n                        borderColor: [\n                            'rgba(251, 101, 30, 1)', 'rgba(0, 126, 255, 1)', 'rgba(112, 72, 232, 1)',\n                            'rgba(16, 185, 129, 1)', 'rgba(236, 72, 153, 1)', 'rgba(245, 158, 11, 1)'\n                        ],\n                        borderWidth: 2,\n                        borderRadius: 4\n                    }]\n                },\n                options: {\n                    responsive: true,\n                    maintainAspectRatio: false,\n                    plugins: { legend: { display: false } },\n                    scales: { y: { beginAtZero: true } }\n                }\n            });\n        }\n        function initMessageDistributionChart() {\n            const ctx = document.getElementById('messageDistributionChart');\n            if (!ctx || !messageDistributionData.length) return;\n            new Chart(ctx, {\n                type: 'line',\n                data: {\n                    labels: messageDistributionData.map(item => item.time),\n                    datasets: [{\n                        label: '消息数量',\n                        data: messageDistributionData.map(item => item.count),\n                        borderColor: 'rgba(0, 126, 255, 1)',\n                        backgroundColor: 'rgba(0, 126, 255, 0.1)',\n                        fill: true,\n                        tension: 0.4\n                    }]\n                },\n                options: {\n                    responsive: true,\n                    maintainAspectRatio: false,\n                    plugins: { legend: { display: false } },\n                    scales: { y: { beginAtZero: true } }\n                }\n            });\n        }\n        document.addEventListener('DOMContentLoaded', function() {\n            setTimeout(() => {\n                initActiveUsersChart();\n                initMessageDistributionChart();\n            }, 100);\n        });\n    </script>\n</body>\n</html>`;\n\n// 高亮处理函数\nfunction highlightText(text) {\n    if (!text) return text;\n    \n    // 高亮关键词 (用[]包围的内容)\n    text = text.replace(/\\[([^\\]]+)\\]/g, '<span class=\"highlight-keyword\">$1</span>');\n    \n    // 高亮用户名 (@用户名)\n    text = text.replace(/@([\\u4e00-\\u9fa5\\w]+)/g, '<span class=\"highlight-name\">@$1</span>');\n    \n    return text;\n}\n\n// 数据填充函数\nfunction fillTemplate(template, data, groupName, reportDate) {\n    let html = template;\n    \n    // 基础信息替换\n    const title = (data.basicInfo ? data.basicInfo.groupName : groupName) + '群聊日报';\n    const formattedDate = formatDate(data.basicInfo ? data.basicInfo.date : reportDate);\n    \n    html = html.replace('[在此处填写报告标题] - [日期]', title + ' - ' + formattedDate);\n    html = html.replace('[主报告标题]', title);\n    html = html.replace(/\\[日期\\]/g, formattedDate);\n    html = html.replace('[消息数]', data.basicInfo ? data.basicInfo.totalMessages : '0');\n    html = html.replace('[活跃用户数]', data.basicInfo ? data.basicInfo.activeUsers : '0');\n    html = html.replace('[热点话题数]', data.basicInfo ? data.basicInfo.hotTopics : '0');\n    html = html.replace('[总体摘要内容]', highlightText(data.summary || '今日群聊活跃，讨论了多个有趣的话题，氛围融洽。'));\n    html = html.replace(/\\[群聊名称\\]/g, data.basicInfo ? data.basicInfo.groupName : groupName);\n    \n    // 生成热点话题卡片\n    let topicCardsHtml = '';\n    if (data.hotTopics && data.hotTopics.length > 0) {\n        const themes = [\n            { bg: 'linear-gradient(135deg, #fff9f0 0%, #fff5f0 100%)', darkBg: 'linear-gradient(135deg, #2d1b0f 0%, #3d2613 100%)', border: '#FB651E', icon: 'fas fa-lightbulb' },\n            { bg: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', darkBg: 'linear-gradient(135deg, #0f1d2d 0%, #132a3d 100%)', border: '#007EFF', icon: 'fas fa-rocket' },\n            { bg: 'linear-gradient(135deg, #f4f0ff 0%, #ede9fe 100%)', darkBg: 'linear-gradient(135deg, #1a0f2d 0%, #24133d 100%)', border: '#7048e8', icon: 'fas fa-brain' },\n            { bg: 'linear-gradient(135deg, #f0fff4 0%, #dcfce7 100%)', darkBg: 'linear-gradient(135deg, #0f2d1a 0%, #133d24 100%)', border: '#10B981', icon: 'fas fa-seedling' },\n            { bg: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)', darkBg: 'linear-gradient(135deg, #2d0f1a 0%, #3d1324 100%)', border: '#ec4899', icon: 'fas fa-heart' },\n            { bg: 'linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%)', darkBg: 'linear-gradient(135deg, #2d1f0f 0%, #3d2913 100%)', border: '#f59e0b', icon: 'fas fa-star' }\n        ];\n        \n        data.hotTopics.slice(0, 6).forEach((topic, index) => {\n            const theme = themes[index % themes.length];\n            const highlightedContent = highlightText(topic.content || '');\n            topicCardsHtml += `\n                <div class=\"card topic-card\" style=\"--topic-border-color: ${theme.border}; background: ${theme.bg}; border-left: 4px solid ${theme.border}; box-shadow: 0 8px 32px ${theme.border}40;\">\n                    <style>\n                        [data-theme=\"dark\"] .topic-card:nth-of-type(${index + 1}) {\n                            background: ${theme.darkBg} !important;\n                        }\n                    </style>\n                    <h2 style=\"color: ${theme.border};\"><i class=\"${theme.icon}\"></i> ${topic.title || '热点话题' + (index + 1)}</h2>\n                    <div style=\"background: ${theme.border}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; display: inline-block; margin-bottom: 1rem;\">${topic.category || '热点讨论'}</div>\n                    <p>${highlightedContent}</p>\n                    ${topic.keywords && Array.isArray(topic.keywords) ? '<div style=\"margin: 1rem 0;\">' + topic.keywords.slice(0, 5).map(keyword => `<span style=\"background: ${theme.border}20; color: ${theme.border}; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; margin-right: 0.5rem;\">${keyword}</span>`).join('') + '</div>' : ''}\n                    <div class=\"topic-mentions\" style=\"color: ${theme.border}; margin-top: 1rem; font-style: italic;\"><i class=\"fas fa-fire\"></i> 讨论热度: 高</div>\n                </div>`;\n        });\n    }\n    html = html.replace('[热点话题卡片内容]', topicCardsHtml);\n    \n    // 生成精彩引用内容\n    let quotesHtml = '';\n    if (data.quotes && data.quotes.length > 0) {\n        data.quotes.slice(0, 5).forEach(quote => {\n            const highlightedContent = highlightText(quote.content || quote.message || '');\n            quotesHtml += `<div style=\"padding: 1rem; margin: 1rem 0; background: var(--bg-tertiary); border-radius: 8px; border-left: 4px solid var(--accent-blue);\">\n                <div style=\"font-style: italic;\">${highlightedContent}</div>\n                <div style=\"text-align: right; margin-top: 8px; color: var(--accent-blue); font-weight: 600;\">—— <span class=\"highlight-name\">${quote.author || '匿名'}</span></div>\n            </div>`;\n        });\n    } else {\n        quotesHtml = '<div style=\"text-align: center; padding: 2rem; color: var(--text-secondary);\">今日暂无精彩引用</div>';\n    }\n    html = html.replace('[精彩引用内容]', quotesHtml);\n    \n    // 生成重要链接内容\n    let linksHtml = '';\n    if (data.links && data.links.length > 0) {\n        data.links.forEach(link => {\n            const linkUrl = link.url || '#';\n            const linkTitle = highlightText(link.title || '重要链接');\n            linksHtml += `<div class=\"link-item\">\n                <a href=\"${linkUrl}\" target=\"_blank\" style=\"text-decoration: none; color: inherit; display: flex; align-items: center; width: 100%;\">\n                    <i class=\"fas fa-external-link-alt link-icon\"></i>\n                    <span style=\"flex-grow: 1;\">${linkTitle}</span>\n                </a>\n            </div>`;\n        });\n    } else {\n        linksHtml = '<div style=\"text-align: center; padding: 2rem; color: var(--text-secondary);\">今日暂无重要链接</div>';\n    }\n    html = html.replace('[重要链接内容]', linksHtml);\n    \n    // 生成活跃之星内容\n    let kolHtml = '';\n    const users = data.stars || data.activeUsers;\n    if (users && users.length > 0) {\n        kolHtml = `<table style=\"width: 100%; border-collapse: collapse; margin-top: 1rem;\">\n            <thead><tr style=\"background: var(--bg-tertiary);\">\n                <th style=\"padding: 1rem; border-bottom: 2px solid var(--accent-primary);\">用户</th>\n                <th style=\"padding: 1rem; border-bottom: 2px solid var(--accent-primary);\">发言数</th>\n                <th style=\"padding: 1rem; border-bottom: 2px solid var(--accent-primary);\">主要贡献</th>\n            </tr></thead><tbody>`;\n        users.slice(0, 5).forEach(user => {\n            const userName = user.name.replace(/\\\\([^)]*\\\\)/g, '');\n            const userDescription = highlightText(user.description || '积极参与群聊讨论，发言数量达' + user.count + '条');\n            kolHtml += `<tr style=\"border-bottom: 1px solid var(--bg-tertiary);\">\n                <td style=\"padding: 0.75rem; font-weight: 600;\"><span class=\"highlight-name\">${userName}</span></td>\n                <td style=\"padding: 0.75rem; text-align: center; font-weight: 600; color: var(--accent-blue);\">${user.count}+</td>\n                <td style=\"padding: 0.75rem;\">${userDescription}</td>\n            </tr>`;\n        });\n        kolHtml += '</tbody></table>';\n    } else {\n        kolHtml = '<div style=\"text-align: center; padding: 2rem; color: var(--text-secondary);\">今日暂无活跃之星数据</div>';\n    }\n    html = html.replace('[活跃之星内容]', kolHtml);\n    \n    // 生成词云内容\n    let wordcloudHtml = '';\n    const words = data.wordCloud || data.keywords;\n    if (words && words.length > 0) {\n        words.slice(0, 20).forEach((word, index) => {\n            const colors = ['var(--accent-tertiary)', 'var(--accent-purple)', 'var(--accent-blue)', 'var(--accent-cyan)', 'var(--text-secondary)'];\n            const sizes = ['1.8rem', '1.5rem', '1.3rem', '1.1rem', '0.9rem'];\n            const colorIndex = index < 2 ? 0 : index < 4 ? 1 : index < 8 ? 2 : index < 12 ? 3 : 4;\n            wordcloudHtml += `<span style=\"padding: 6px 12px; margin: 6px; border-radius: 6px; font-weight: 500; color: white; background: ${colors[colorIndex]}; font-size: ${sizes[colorIndex]}; display: inline-block;\">${word}</span>`;\n        });\n    } else {\n        wordcloudHtml = '<span style=\"padding: 6px 12px; margin: 6px; border-radius: 6px; font-weight: 500; color: white; background: var(--accent-tertiary); font-size: 1.8rem;\">n8n</span><span style=\"padding: 6px 12px; margin: 6px; border-radius: 6px; font-weight: 500; color: white; background: var(--accent-purple); font-size: 1.5rem;\">自动化</span>';\n    }\n    html = html.replace('[词云内容]', wordcloudHtml);\n    \n    // 图表数据\n    let activeUsersChartData = '[]';\n    if (data.activeUsers && data.activeUsers.length > 0) {\n        const chartData = data.activeUsers.slice(0, 8).map(user => ({\n            name: user.name ? user.name.replace(/\\\\([^)]*\\\\)/g, '') : '未知用户',\n            count: user.count || 0\n        }));\n        activeUsersChartData = JSON.stringify(chartData);\n    }\n    \n    let messageDistributionChartData = '[]';\n    if (data.timeDistribution && data.timeDistribution.length > 0) {\n        const chartData = data.timeDistribution.map(item => ({\n            time: item.timeSlot || item.timeRange || item.time || '未知时段',\n            count: item.count || 0\n        }));\n        messageDistributionChartData = JSON.stringify(chartData);\n    }\n    \n    html = html.replace('[ACTIVE_USERS_DATA]', activeUsersChartData);\n    html = html.replace('[MESSAGE_DISTRIBUTION_DATA]', messageDistributionChartData);\n    \n    return html;\n}\n\n// 生成最终HTML\nlet finalHtml = fillTemplate(templateHtml, data, groupName, reportDate);\n\n// 替换链接占位符\nfinalHtml = finalHtml.replace(/\\[HISTORY_URL\\]/g, historyReportUrl || '');\nfinalHtml = finalHtml.replace(/\\[YESTERDAY_URL\\]/g, yesterdayReportUrl || '');\n\nconst fileName = (data.basicInfo ? data.basicInfo.groupName : groupName) + '-' + (data.basicInfo ? data.basicInfo.date : reportDate) + '-日报.html';\n\nreturn {\n  html: finalHtml,\n  fileName: fileName,\n  metadata: {\n    groupName: data.basicInfo ? data.basicInfo.groupName : groupName,\n    reportDate: data.basicInfo ? data.basicInfo.date : reportDate,\n    messageCount: data.basicInfo ? data.basicInfo.totalMessages : 0,\n    activeUsers: data.basicInfo ? data.basicInfo.activeUsers : 0,\n    generatedAt: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        624
+      ],
+      "id": "9b409b33-4004-4244-8dd6-ac896e429a1f",
+      "name": "HTML报告生成器",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "leftValue": "={{ $json.html }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        816,
+        608
+      ],
+      "id": "6d384b5d-8089-4075-82e5-98d18cbc74f6",
+      "name": "报告生成结果校验"
+    },
+    {
+      "parameters": {
+        "content": "## 任务初始化模块\n每日定时启动，并配置本次任务所需的所有全局变量，如群名、日期、URL等。",
+        "height": 256,
+        "width": 432,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        688,
+        176
+      ],
+      "typeVersion": 1,
+      "id": "3d1ec327-c2aa-436d-a888-30f8d51d421e",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 数据获取与校验模块\n从内部API获取昨日群聊记录，并检查记录是否为空。如果记录为空，则中止后续流程。",
+        "height": 256,
+        "width": 608
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1152,
+        176
+      ],
+      "typeVersion": 1,
+      "id": "9160c2ee-54ac-42b0-8cbf-e5713ff7109b",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## AI核心分析模块\n调用大语言模型，根据复杂的指令模板对聊天记录进行深度分析、总结，并强制输出为结构化的JSON数据。",
+        "height": 416,
+        "width": 560,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        464
+      ],
+      "typeVersion": 1,
+      "id": "baaf94d6-e828-495d-8934-dfa6c66d1825",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## HTML报告生成与校验\n\n将AI分析出的JSON数据，通过内置的模板引擎渲染成一份包含图表和丰富样式的HTML日报，并对生成结果进行校验，失败则终止流程。",
+        "height": 416,
+        "width": 528,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        576,
+        464
+      ],
+      "typeVersion": 1,
+      "id": "e408a3ed-fda6-4c04-bd58-134a37a4e7cb",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## 报告归档与输出\n将生成的HTML报告转换为二进制文件，上传到S3云存储进行持久化归档，为后续的分发做准备。",
+        "height": 416,
+        "width": 640,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1120,
+        464
+      ],
+      "typeVersion": 1,
+      "id": "33ea1c6d-abc9-4f25-ab38-49467a792c9f",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c2a2eec2-4ead-4544-83db-73aba917f553",
+              "name": "group_name",
+              "value": "n8n自动化实战课（付费群）",
+              "type": "string"
+            },
+            {
+              "id": "6dab17d2-2e5e-40e3-b5d9-0abcdac0dde8",
+              "name": "date",
+              "value": "={{ $now.minus({days: 1}).format('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "9b9aa56a-6ded-4f42-a3ad-1802be5a3f0a",
+              "name": "history_report_url",
+              "value": "替换成你的历史日报地址",
+              "type": "string"
+            },
+            {
+              "id": "1742d155-8a1c-46ee-b426-0f90361c6725",
+              "name": "public_url",
+              "value": "替换你的自定义域",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        944,
+        288
+      ],
+      "id": "821877cc-bd3c-4b0b-b0e4-5ee53895f222",
+      "name": "设置-通用配置变量"
+    },
+    {
+      "parameters": {
+        "content": "🤖 智能微信群聊日报生成器 - HTML\n📋 基本信息\n工作流名称：智能微信群聊日报生成器 - HTML \n版本：v1.0.0\n架构模式：定时任务 + API 调用 + 大语言模型处理 + HTML渲染 + 云存储  \n技术栈：n8n + Chatlog + Google Gemini + S3  \n创建者：tianxinAI\n微信：tianxinAI360\n🎯 功能概述\n这个工作流实现了一个全自动的微信群聊日报生成和发布系统。它每天定时运行，自动抓取指定微信群前一天的聊天记录，通过 Google Gemini 大语言模型进行智能分析和总结，最后把整理好的内容渲染成一份美观、可交互的 HTML 网页报告，并自动上传到 S3 这类云存储服务中。这样一来，群里的讨论内容就能被很好地保存下来，也方便随时查看和分享。",
+        "height": 432,
+        "width": 672,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "149d5bd7-8507-427d-a64c-6dee2254aab6",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        80,
+        752
+      ],
+      "id": "c8626f93-574b-4f74-8c9c-4224f334c7e6",
+      "name": "Google Gemini Chat Model"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "触发器-每日定时启动": {
+      "main": [
+        [
+          {
+            "node": "设置-通用配置变量",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取-昨日微信群聊记录": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI-分析并总结群聊内容": {
+      "main": [
+        [
+          {
+            "node": "HTML报告生成器",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI-分析并总结群聊内容",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a file": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "转换-HTML字符串到Binary": {
+      "main": [
+        [
+          {
+            "node": "Upload a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI-分析并总结群聊内容",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML报告生成器": {
+      "main": [
+        [
+          {
+            "node": "报告生成结果校验",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "报告生成结果校验": {
+      "main": [
+        [
+          {
+            "node": "转换-HTML字符串到Binary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "错误处理-生成失败",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "设置-通用配置变量": {
+      "main": [
+        [
+          {
+            "node": "获取-昨日微信群聊记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI-分析并总结群聊内容",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6d3b7dc3-f393-4c5e-a8ae-0cb9804a2de9",
+  "meta": {
+    "instanceId": "a5f08ede13bceab7d066ab11fb03ba9312e3e584a39630194ecaef89c79e9ee1"
+  },
+  "id": "osMCCd3itQ4QEsBY",
+  "tags": [
+    {
+      "createdAt": "2025-12-24T03:15:29.885Z",
+      "updatedAt": "2025-12-24T03:15:29.885Z",
+      "id": "NhiSIK0T28SNNoyh",
+      "name": "auto-flow-academy"
+    }
+  ]
+}
